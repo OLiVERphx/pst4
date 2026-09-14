@@ -1,0 +1,112 @@
+﻿<div>
+    <div class="d-flex mb-3">
+        <input type="text" wire:model.live="search" class="form-control me-2" placeholder="Buscar pedido o cliente...">
+
+        <select wire:model="statusFilter" class="form-select me-2" style="width:180px;">
+            <option value="">Todos los estados</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="pago_subido">Pago subido</option>
+            <option value="pago_verificado">Pago verificado</option>
+            <option value="procesando">Procesando</option>
+            <option value="enviado">Enviado</option>
+            <option value="entregado">Entregado</option>
+        </select>
+
+        <button class="btn btn-primary ms-auto" wire:click="$refresh">Refresh</button>
+    </div>
+
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th># Pedido</th>
+                <th>Cliente</th>
+                <th>Tipo</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Pago</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($orders as $order)
+                <tr>
+                    <td>{{ $order->numero_pedido }}</td>
+                    <td>{{ optional($order->user)->name }}</td>
+                    <td><span class="badge bg-info">{{ $order->tipo }}</span></td>
+                    <td>{{ $order->items->count() }}</td>
+                    <td>${{ number_format($order->total, 2) }}</td>
+                    <td>{{ optional($order->payment)->metodo ?? 'â€”' }}</td>
+                    <td>
+                        @php
+                            $c = 'secondary';
+                            switch($order->estado) {
+                                case 'pendiente': $c='warning'; break;
+                                case 'pago_subido': $c='info'; break;
+                                case 'pago_verificado': $c='primary'; break;
+                                case 'procesando': $c='secondary'; break;
+                                case 'enviado': $c='success'; break;
+                                case 'entregado': $c='dark'; break;
+                                case 'cancelado': $c='danger'; break;
+                            }
+                        @endphp
+                        <span class="badge bg-{{ $c }}">{{ $order->estado }}</span>
+                    </td>
+                    <td>{{ $order->created_at }}</td>
+                    <td>
+                        <button wire:click="abrirDetalle({{ $order->id }})" class="btn btn-sm btn-primary">Ver</button>
+                        <button wire:click="advance({{ $order->id }})" class="btn btn-sm btn-success">Avanzar</button>
+                        <button wire:click="cancel({{ $order->id }})" class="btn btn-sm btn-danger" onclick="return confirm('Cancelar pedido?')">Cancelar</button>
+                    </td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+
+    <div>
+        {{ $orders->links() }}
+    </div>
+
+    <!-- Detalle modal -->
+    @if($mostrarDetalle && $selectedOrder)
+        <div class="modal show d-block" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Pedido {{ $selectedOrder->numero_pedido }}</h5>
+                        <button type="button" class="btn-close" wire:click="$set('mostrarDetalle', false)"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Cliente:</strong> {{ optional($selectedOrder->user)->name }}</p>
+                        <p><strong>Total:</strong> ${{ number_format($selectedOrder->total,2) }}</p>
+
+                        <h6>Items</h6>
+                        <table class="table">
+                            <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio</th></tr></thead>
+                            <tbody>
+                                @foreach($selectedOrder->items as $it)
+                                    <tr>
+                                        <td>{{ optional($it->product)->nombre }}</td>
+                                        <td>{{ $it->cantidad }}</td>
+                                        <td>${{ number_format($it->precio_unitario,2) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+
+                        <p><strong>Estado:</strong> {{ $selectedOrder->estado }}</p>
+                        @if(optional($selectedOrder->payment)->ruta_comprobante)
+                            <p><a href="{{ optional($selectedOrder->payment)->ruta_comprobante }}" target="_blank">Ver comprobante</a></p>
+                        @endif
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="$set('mostrarDetalle', false)">Cerrar</button>
+                        <button type="button" class="btn btn-success" wire:click="advance({{ $selectedOrder->id }})">Avanzar estado</button>
+                        <button type="button" class="btn btn-danger" wire:click="cancel({{ $selectedOrder->id }})">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+</div>

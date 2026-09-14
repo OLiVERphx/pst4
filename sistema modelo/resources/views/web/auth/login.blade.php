@@ -1,0 +1,21 @@
+@extends('layouts.web')
+
+@section('content')
+<div class="max-w-md mx-auto bg-white p-6 rounded shadow">
+    <h2 class="text-xl font-bold">Login</h2>
+    <form method="POST" action="{{ route('login') }}">
+        @csrf
+        <div class="mt-4">
+            <label>Email</label>
+            <input type="email" name="email" class="w-full border px-2 py-1">
+        </div>
+        <div class="mt-4">
+            <label>Password</label>
+            <input type="password" name="password" class="w-full border px-2 py-1">
+        </div>
+        <div class="mt-4">
+            <button class="px-4 py-2 bg-blue-600 text-white rounded">Login</button>
+        </div>
+    </form>
+</div>
+@endsection

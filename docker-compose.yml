@@ -1,0 +1,33 @@
+version: '3.8'
+services:
+  ml-service:
+    build: ./ml-service
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+    volumes:
+      - ./ml-service/data:/app/data:ro
+
+# Nota: el servicio Laravel no se construye aquí por simplicidad; el objetivo es
+# proporcionar un despliegue replicable del microservicio ML junto al proyecto.
+# Para producción, añadir un servicio 'app' que ejecute php-fpm/nginx y una base de datos.
+# Ejemplo (comentado):
+#  app:
+#    image: php:8.3-fpm
+#    volumes:
+#      - ./:/var/www/html
+#    ports:
+#      - "8000:8000"
+#    depends_on:
+#      - db
+#  db:
+#    image: mysql:8
+#    environment:
+#      MYSQL_ROOT_PASSWORD: secret
+#      MYSQL_DATABASE: smartphoneworld
+#    volumes:
+#      - db_data:/var/lib/mysql
+
+# volumes:
+#  db_data:
+#    driver: local

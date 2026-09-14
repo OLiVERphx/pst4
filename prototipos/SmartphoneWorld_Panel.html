@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SW Admin — Panel de Gestión</title>
+<style>
+/* ═══════════════════════ TOKENS ═══════════════════════ */
+:root {
+  --bg:       #0B0E17;
+  --surface:  #131720;
+  --surface2: #1C2130;
+  --surface3: #242A3D;
+  --border:   #2A3047;
+  --blue:     #1D4ED8;
+  --blue-h:   #2563EB;
+  --teal:     #0D9488;
+  --teal-h:   #14B8A6;
+  --green:    #059669;
+  --orange:   #EA580C;
+  --red:      #DC2626;
+  --purple:   #7C3AED;
+  --text:     #F1F5F9;
+  --muted:    #94A3B8;
+  --font:     'Inter', system-ui, sans-serif;
+  --r:        10px;
+  --sidebar:  240px;
+  --tr:       .15s ease;
+}
+[data-theme="light"] {
+  --bg:       #F1F5F9;
+  --surface:  #FFFFFF;
+  --surface2: #F8FAFC;
+  --surface3: #EFF6FF;
+  --border:   #E2E8F0;
+  --text:     #0F172A;
+  --muted:    #64748B;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--text);height:100%;display:flex;transition:background var(--tr),color var(--tr)}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:inherit;border:none}
+input,select,textarea{font-family:inherit}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* ═══════════════════════ SIDEBAR ═══════════════════════ */
+.sidebar{
+  width:var(--sidebar);flex-shrink:0;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;height:100vh;position:fixed;top:0;left:0;
+  z-index:200;transition:transform var(--tr);overflow-y:auto;
+}
+.sidebar-logo{
+  padding:1.2rem 1rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:.7rem;
+}
+.logo-icon{
+  width:38px;height:38px;border-radius:9px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--blue),var(--teal));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;font-weight:900;color:#fff;
+}
+.logo-text{font-size:.95rem;font-weight:800;line-height:1.2}
+.logo-sub{font-size:.7rem;color:var(--muted)}
+.sidebar-nav{flex:1;padding:.5rem 0}
+.nav-section{padding:.6rem 1rem .3rem;font-size:.67rem;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.nav-item{
+  display:flex;align-items:center;gap:.7rem;
+  padding:.6rem 1rem;cursor:pointer;border-radius:0;
+  font-size:.87rem;font-weight:500;color:var(--muted);
+  transition:all var(--tr);position:relative;
+  border-left:3px solid transparent;
+  margin:1px 0;
+}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{
+  background:var(--surface2);color:var(--text);font-weight:600;
+  border-left-color:var(--blue);
+}
+.nav-icon{font-size:1.05rem;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{
+  margin-left:auto;background:var(--orange);color:#fff;
+  border-radius:50px;font-size:.65rem;font-weight:700;
+  padding:.1rem .45rem;min-width:18px;text-align:center;
+}
+.sidebar-bottom{padding:1rem;border-top:1px solid var(--border)}
+.sidebar-user{display:flex;align-items:center;gap:.7rem}
+.user-avatar{
+  width:34px;height:34px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--purple),var(--blue));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;font-weight:700;color:#fff;
+}
+.user-name{font-size:.82rem;font-weight:600}
+.user-role{font-size:.7rem;color:var(--muted)}
+
+/* ═══════════════════════ TOPBAR ═══════════════════════ */
+.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{
+  height:56px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 1.5rem;gap:1rem;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-title{font-size:1rem;font-weight:700;flex:1}
+.topbar-search{
+  flex:1;max-width:340px;position:relative;
+}
+.topbar-search input{
+  width:100%;padding:.42rem .9rem .42rem 2.4rem;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;color:var(--text);font-size:.85rem;outline:none;
+  transition:border-color var(--tr);
+}
+.topbar-search input:focus{border-color:var(--blue)}
+.topbar-search input::placeholder{color:var(--muted)}
+.topbar-search .si{position:absolute;left:.7rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem}
+.topbar-actions{display:flex;align-items:center;gap:.6rem}
+.tb-btn{
+  width:34px;height:34px;border-radius:8px;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--muted);display:flex;align-items:center;justify-content:center;
+  font-size:.95rem;cursor:pointer;transition:all var(--tr);position:relative;
+}
+.tb-btn:hover{color:var(--text);background:var(--surface3)}
+.notif-dot{
+  position:absolute;top:6px;right:6px;width:7px;height:7px;
+  border-radius:50%;background:var(--orange);
+  border:2px solid var(--surface);
+}
+
+/* ═══════════════════════ CONTENT ═══════════════════════ */
+.content{flex:1;padding:1.5rem;overflow-x:hidden}
+.page{display:none}
+.page.active{display:block}
+
+/* ═══════════════════════ KPI CARDS ═══════════════════════ */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem}
+.kpi-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:1.2rem;position:relative;overflow:hidden;
+  transition:transform var(--tr),box-shadow var(--tr);
+}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.kpi-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+}
+.kpi-card.blue::before{background:var(--blue)}
+.kpi-card.teal::before{background:var(--teal)}
+.kpi-card.green::before{background:var(--green)}
+.kpi-card.orange::before{background:var(--orange)}
+.kpi-card.purple::before{background:var(--purple)}
+.kpi-icon{font-size:1.8rem;margin-bottom:.6rem}
+.kpi-val{font-size:2rem;font-weight:900;letter-spacing:-.03em;line-height:1}
+.kpi-label{font-size:.78rem;color:var(--muted);margin-top:.3rem;font-weight:500}
+.kpi-trend{
+  font-size:.75rem;font-weight:600;margin-top:.5rem;
+  display:inline-flex;align-items:center;gap:.25rem;
+  padding:.15rem .5rem;border-radius:50px;
+}
+.trend-up{background:rgba(5,150,105,.12);color:#34D399}
+.trend-dn{background:rgba(220,38,38,.12);color:#F87171}
+
+/* ═══════════════════════ SECTION HEADER ═══════════════════════ */
+.section-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1rem;flex-wrap:wrap;gap:.5rem;
+}
+.section-hdr-title{font-size:1rem;font-weight:700}
+.btn{
+  display:inline-flex;align-items:center;gap:.4rem;
+  padding:.5rem 1rem;border-radius:8px;font-size:.84rem;font-weight:600;
+  cursor:pointer;transition:all var(--tr);border:none;
+}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-h)}
+.btn-ghost{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);background:var(--surface3)}
+.btn-danger{background:rgba(220,38,38,.12);color:#F87171;border:1px solid rgba(220,38,38,.2)}
+.btn-danger:hover{background:rgba(220,38,38,.25)}
+.btn-success{background:rgba(5,150,105,.15);color:#34D399;border:1px solid rgba(5,150,105,.25)}
+.btn-success:hover{background:rgba(5,150,105,.28)}
+.btn-warning{background:rgba(234,88,12,.12);color:#FB923C;border:1px solid rgba(234,88,12,.2)}
+.btn-sm{padding:.3rem .7rem;font-size:.78rem}
+
+/* ═══════════════════════ TABLE ═══════════════════════ */
+.table-wrap{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;
+}
+.table-controls{
+  padding:.8rem 1rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+}
+.tbl-search{
+  padding:.4rem .8rem;background:var(--surface2);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-size:.84rem;outline:none;width:220px;
+  transition:border-color var(--tr);
+}
+.tbl-search:focus{border-color:var(--blue)}
+.tbl-select{
+  padding:.4rem .7rem;background:var(--surface2);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-size:.84rem;outline:none;cursor:pointer;
+}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+thead th{
+  padding:.75rem 1rem;text-align:left;
+  background:var(--surface2);border-bottom:1px solid var(--border);
+  font-size:.72rem;font-weight:700;color:var(--muted);
+  letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;
+}
+tbody tr{border-bottom:1px solid var(--border);transition:background var(--tr)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+tbody td{padding:.7rem 1rem;vertical-align:middle}
+.tbl-pagination{
+  padding:.7rem 1rem;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:.8rem;color:var(--muted);
+}
+.pg-btns{display:flex;gap:.3rem}
+.pg-btn{
+  width:28px;height:28px;border-radius:6px;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--muted);font-size:.8rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--tr);
+}
+.pg-btn:hover,.pg-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* ═══════════════════════ STATUS BADGES ═══════════════════════ */
+.badge{
+  display:inline-flex;align-items:center;gap:.3rem;
+  padding:.22rem .65rem;border-radius:50px;
+  font-size:.7rem;font-weight:700;letter-spacing:.03em;white-space:nowrap;
+}
+.badge-pending   {background:rgba(234,88,12,.12);color:#FB923C}
+.badge-uploaded  {background:rgba(29,78,216,.12);color:#60A5FA}
+.badge-verified  {background:rgba(5,150,105,.12);color:#34D399}
+.badge-processing{background:rgba(124,58,237,.12);color:#A78BFA}
+.badge-delivered {background:rgba(5,150,105,.2);color:#10B981}
+.badge-cancelled {background:rgba(220,38,38,.12);color:#F87171}
+.badge-valid     {background:rgba(5,150,105,.12);color:#34D399}
+.badge-invalid   {background:rgba(220,38,38,.12);color:#F87171}
+.badge-suspicious{background:rgba(234,88,12,.2);color:#FB923C}
+.badge-low       {background:rgba(234,88,12,.12);color:#FB923C}
+.badge-ok        {background:rgba(5,150,105,.1);color:#34D399}
+
+/* ═══════════════════════ PRODUCT THUMB ═══════════════════════ */
+.prod-thumb{
+  width:36px;height:36px;border-radius:8px;
+  background:var(--surface2);display:flex;align-items:center;
+  justify-content:center;font-size:1.3rem;flex-shrink:0;
+}
+.prod-row{display:flex;align-items:center;gap:.7rem}
+.prod-name{font-size:.85rem;font-weight:600}
+.prod-code{font-size:.72rem;color:var(--muted)}
+
+/* ═══════════════════════ STOCK BAR ═══════════════════════ */
+.stock-bar-wrap{width:90px}
+.stock-bar{height:5px;border-radius:3px;background:var(--surface2);overflow:hidden;margin-bottom:3px}
+.stock-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.stock-pct{font-size:.7rem;color:var(--muted)}
+
+/* ═══════════════════════ CARDS GRID ═══════════════════════ */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);overflow:hidden;transition:all var(--tr);
+}
+.card:hover{border-color:var(--blue);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.card-hdr{padding:1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:1rem}
+.card-row{display:flex;justify-content:space-between;align-items:center;padding:.3rem 0;font-size:.83rem;border-bottom:1px solid var(--border)}
+.card-row:last-child{border-bottom:none}
+.card-key{color:var(--muted)}
+.card-val{font-weight:600}
+
+/* ═══════════════════════ MODAL ═══════════════════════ */
+.overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;padding:1rem;
+}
+.overlay.active{display:flex}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;width:100%;max-width:560px;max-height:90vh;
+  overflow-y:auto;animation:up .22s ease;
+}
+@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-hdr{
+  padding:1.2rem 1.5rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-title{font-size:1rem;font-weight:700}
+.modal-close{
+  width:30px;height:30px;border-radius:7px;
+  background:var(--surface2);color:var(--muted);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:.9rem;border:1px solid var(--border);
+  transition:all var(--tr);
+}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:1.5rem}
+.modal-footer{padding:1rem 1.5rem;border-top:1px solid var(--border);display:flex;gap:.6rem;justify-content:flex-end}
+.form-group{margin-bottom:1rem}
+.form-label{font-size:.75rem;font-weight:700;color:var(--muted);display:block;margin-bottom:.35rem;letter-spacing:.04em;text-transform:uppercase}
+.form-input,.form-select,.form-textarea{
+  width:100%;padding:.6rem .9rem;border-radius:8px;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--text);font-size:.88rem;outline:none;
+  transition:border-color var(--tr),box-shadow var(--tr);
+}
+.form-textarea{resize:vertical;min-height:80px}
+.form-input:focus,.form-select:focus,.form-textarea:focus{
+  border-color:var(--blue);box-shadow:0 0 0 3px rgba(29,78,216,.15);
+}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+
+/* ═══════════════════════ CHARTS (CSS-based) ═══════════════════════ */
+.chart-bar-horiz{display:flex;flex-direction:column;gap:.5rem}
+.chart-bar-row{display:flex;align-items:center;gap:.7rem;font-size:.82rem}
+.chart-bar-label{width:110px;color:var(--muted);text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.78rem}
+.chart-bar-track{flex:1;height:22px;background:var(--surface2);border-radius:4px;overflow:hidden;position:relative}
+.chart-bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:.5rem;font-size:.73rem;font-weight:700;color:#fff;transition:width 1s ease}
+.chart-bar-val{width:55px;text-align:right;font-weight:700;font-size:.82rem;color:var(--text);flex-shrink:0}
+
+.mini-bars{display:flex;align-items:flex-end;gap:3px;height:40px}
+.mini-bar{flex:1;border-radius:3px 3px 0 0;min-height:4px;transition:height .5s ease}
+
+/* ═══════════════════════ PAYMENT REVIEW ═══════════════════════ */
+.receipt-preview{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--r);padding:1rem;margin-bottom:1rem;
+  display:flex;align-items:center;justify-content:center;
+  font-size:3rem;height:120px;
+}
+.meta-table{font-size:.8rem;width:100%}
+.meta-table td{padding:.3rem .5rem;border-bottom:1px solid var(--border)}
+.meta-table td:first-child{color:var(--muted);width:45%}
+.meta-table td:last-child{font-weight:600}
+.security-row{
+  display:flex;align-items:center;gap:.5rem;
+  padding:.4rem .7rem;border-radius:7px;margin-bottom:.4rem;font-size:.8rem;
+}
+.sec-ok{background:rgba(5,150,105,.1);color:#34D399}
+.sec-warn{background:rgba(234,88,12,.1);color:#FB923C}
+.sec-fail{background:rgba(220,38,38,.1);color:#F87171}
+
+/* ═══════════════════════ ML REPORT ═══════════════════════ */
+.report-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.report-panel{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:1.2rem;
+}
+.report-panel-title{
+  font-size:.75rem;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:1rem;
+}
+.forecast-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.4rem 0;border-bottom:1px solid var(--border);font-size:.83rem;
+}
+.forecast-row:last-child{border-bottom:none}
+.forecast-prod{color:var(--text);font-weight:500}
+.forecast-val{font-weight:700;color:var(--teal)}
+.forecast-trend{font-size:.7rem;padding:.15rem .5rem;border-radius:50px}
+
+/* ═══════════════════════ TOAST ═══════════════════════ */
+.toast-box{position:fixed;bottom:1.2rem;right:1.2rem;z-index:9999;display:flex;flex-direction:column;gap:.4rem}
+.toast{
+  background:var(--surface);border:1px solid var(--border);
+  border-left:4px solid var(--green);
+  border-radius:9px;padding:.7rem 1.1rem;font-size:.84rem;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);animation:up .22s ease;max-width:300px;
+}
+.toast.err{border-left-color:var(--red)}
+.toast.warn{border-left-color:var(--orange)}
+
+/* ═══════════════════════ RESPONSIVE ═══════════════════════ */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  .report-grid{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .topbar-search{display:none}
+}
+.menu-toggle{display:none}
+@media(max-width:768px){.menu-toggle{display:flex}}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">SW</div>
+    <div>
+      <div class="logo-text">Smartphone World</div>
+      <div class="logo-sub">Panel de Administración</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">Principal</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+
+    <div class="nav-section">Tienda Web</div>
+    <div class="nav-item" onclick="showPage('orders',this)">
+      <span class="nav-icon">📦</span> Pedidos
+      <span class="nav-badge" id="pendingBadge">3</span>
+    </div>
+    <div class="nav-item" onclick="showPage('payments',this)">
+      <span class="nav-icon">💳</span> Verificar Pagos
+      <span class="nav-badge" id="payBadge">2</span>
+    </div>
+    <div class="nav-item" onclick="showPage('clients',this)">
+      <span class="nav-icon">👥</span> Clientes
+    </div>
+
+    <div class="nav-section">Inventario</div>
+    <div class="nav-item" onclick="showPage('products',this)">
+      <span class="nav-icon">🗂️</span> Productos
+    </div>
+    <div class="nav-item" onclick="showPage('inventory',this)">
+      <span class="nav-icon">📋</span> Movimientos
+    </div>
+    <div class="nav-item" onclick="showPage('alerts',this)">
+      <span class="nav-icon">⚠️</span> Alertas Stock
+      <span class="nav-badge" id="alertBadge">4</span>
+    </div>
+
+    <div class="nav-section">Inteligencia</div>
+    <div class="nav-item" onclick="showPage('reports',this)">
+      <span class="nav-icon">🤖</span> Reportes ML
+    </div>
+    <div class="nav-item" onclick="showPage('catalog-web',this)">
+      <span class="nav-icon">🌐</span> Gestión Web
+    </div>
+
+    <div class="nav-section">Sistema</div>
+    <div class="nav-item" onclick="showPage('settings',this)">
+      <span class="nav-icon">⚙️</span> Configuración
+    </div>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <div class="sidebar-user">
+      <div class="user-avatar">SA</div>
+      <div>
+        <div class="user-name">Superadmin</div>
+        <div class="user-role">Administrador Dios</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <button class="tb-btn menu-toggle" onclick="toggleSidebar()">☰</button>
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div class="topbar-search">
+      <span class="si">🔍</span>
+      <input type="text" placeholder="Buscar en el sistema…" oninput="globalSearch(this.value)">
+    </div>
+    <div class="topbar-actions">
+      <button class="tb-btn" onclick="toggleTheme()" title="Cambiar tema" id="themeBtn">🌙</button>
+      <button class="tb-btn" onclick="showPage('alerts', document.querySelector('.nav-item:nth-child(11)'))">
+        ⚠️<div class="notif-dot"></div>
+      </button>
+      <button class="tb-btn" title="Ver tienda web" onclick="window.open('SmartphoneWorld_Tienda.html','_blank')">🔗</button>
+    </div>
+  </header>
+
+  <!-- ═══════ CONTENT ═══════ -->
+  <div class="content">
+
+    <!-- ▌ DASHBOARD ▌ -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card blue">
+          <div class="kpi-icon">📦</div>
+          <div class="kpi-val">$1,247</div>
+          <div class="kpi-label">Ventas del mes</div>
+          <div class="kpi-trend trend-up">↑ 14% vs mes anterior</div>
+        </div>
+        <div class="kpi-card teal">
+          <div class="kpi-icon">🛒</div>
+          <div class="kpi-val">38</div>
+          <div class="kpi-label">Pedidos este mes</div>
+          <div class="kpi-trend trend-up">↑ 7 nuevos hoy</div>
+        </div>
+        <div class="kpi-card green">
+          <div class="kpi-icon">👥</div>
+          <div class="kpi-val">124</div>
+          <div class="kpi-label">Clientes registrados</div>
+          <div class="kpi-trend trend-up">↑ 3 nuevos esta semana</div>
+        </div>
+        <div class="kpi-card orange">
+          <div class="kpi-icon">⚠️</div>
+          <div class="kpi-val">4</div>
+          <div class="kpi-label">Alertas de stock</div>
+          <div class="kpi-trend trend-dn">↓ Revisar inventario</div>
+        </div>
+        <div class="kpi-card purple">
+          <div class="kpi-icon">💳</div>
+          <div class="kpi-val">2</div>
+          <div class="kpi-label">Pagos por verificar</div>
+          <div class="kpi-trend trend-up">Pendientes de revisión</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+        <!-- Ventas por categoría -->
+        <div class="report-panel">
+          <div class="report-panel-title">📊 Ventas por categoría (mes)</div>
+          <div class="chart-bar-horiz" id="salesByCat"></div>
+        </div>
+        <!-- Tendencia semanal -->
+        <div class="report-panel">
+          <div class="report-panel-title">📈 Ventas últimas 8 semanas</div>
+          <div style="display:flex;align-items:flex-end;gap:4px;height:100px;padding-top:.5rem" id="weeklyChart"></div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.5rem">Semanas S1–S8</div>
+        </div>
+      </div>
+
+      <!-- Recent orders -->
+      <div class="section-hdr">
+        <div class="section-hdr-title">Últimos pedidos</div>
+        <button class="btn btn-ghost btn-sm" onclick="showPage('orders',null)">Ver todos →</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Pedido</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Fecha</th><th>Acción</th>
+          </tr></thead>
+          <tbody id="dashOrders"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ▌ PEDIDOS ▌ -->
+    <div class="page" id="page-orders">
+      <div class="section-hdr">
+        <div class="section-hdr-title">Gestión de Pedidos</div>
+        <div style="display:flex;gap:.5rem">
+          <select class="tbl-select" id="orderStatusFilter" onchange="renderOrders()">
+            <option value="">Todos los estados</option>
+            <option value="pending">Pendiente</option>
+            <option value="payment_uploaded">Pago subido</option>
+            <option value="payment_verified">Pago verificado</option>
+            <option value="processing">En proceso</option>
+            <option value="delivered">Entregado</option>
+            <option value="cancelled">Cancelado</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-controls">
+          <input class="tbl-search" type="text" placeholder="Buscar por nro., cliente…" oninput="renderOrders(this.value)">
+          <select class="tbl-select" onchange="renderOrders()">
+            <option>Todos los tipos</option>
+            <option>Al detal</option>
+            <option>Al mayor</option>
+          </select>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Nro.</th><th>Cliente</th><th>Tipo</th><th>Items</th><th>Total</th><th>Pago</th><th>Estado</th><th>Fecha</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="ordersTable"></tbody>
+        </table>
+        <div class="tbl-pagination">
+          <span id="ordersCount">Mostrando 1–10 de 38 pedidos</span>
+          <div class="pg-btns">
+            <div class="pg-btn active">1</div>
+            <div class="pg-btn">2</div>
+            <div class="pg-btn">3</div>
+            <div class="pg-btn">›</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▌ VERIFICAR PAGOS ▌ -->
+    <div class="page" id="page-payments">
+      <div class="section-hdr">
+        <div class="section-hdr-title">Verificación de Comprobantes de Pago</div>
+        <div class="badge badge-pending">2 pendientes</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem" id="paymentsGrid"></div>
+    </div>
+
+    <!-- ▌ CLIENTES ▌ -->
+    <div class="page" id="page-clients">
+      <div class="section-hdr">
+        <div class="section-hdr-title">Clientes Registrados</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('clientModal')">+ Agregar cliente</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-controls">
+          <input class="tbl-search" type="text" placeholder="Buscar cliente…" oninput="renderClients(this.value)">
+          <select class="tbl-select">
+            <option>Todos</option>
+            <option>Activos</option>
+            <option>Inactivos</option>
+          </select>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Cliente</th><th>Cédula</th><th>Teléfono</th><th>Ciudad</th><th>Pedidos</th><th>Total comprado</th><th>Estado</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="clientsTable"></tbody>
+        </table>
+        <div class="tbl-pagination">
+          <span id="clientsCount"></span>
+          <div class="pg-btns"><div class="pg-btn active">1</div><div class="pg-btn">2</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▌ PRODUCTOS ▌ -->
+    <div class="page" id="page-products">
+      <div class="section-hdr">
+        <div class="section-hdr-title">Catálogo de Productos</div>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-ghost btn-sm">📤 Importar CSV</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('productModal')">+ Nuevo producto</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-controls">
+          <input class="tbl-search" type="text" placeholder="Buscar producto…" oninput="renderProducts(this.value)">
+          <select class="tbl-select" onchange="renderProducts()">
+            <option value="">Todas las categorías</option>
+            <option>Audífonos</option><option>Fundas</option>
+            <option>Cargadores</option><option>Cables</option>
+            <option>Protectores</option><option>Baterías</option><option>Soportes</option>
+          </select>
+          <select class="tbl-select" onchange="renderProducts()">
+            <option>Todas las marcas</option>
+            <option>Samsung</option><option>Apple</option><option>Xiaomi</option>
+            <option>Baseus</option><option>Anker</option><option>Infinix</option>
+          </select>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Producto</th><th>Categoría</th><th>P. Detal</th><th>P. Mayor</th><th>Stock</th><th>Nivel</th><th>Estado</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="productsTable"></tbody>
+        </table>
+        <div class="tbl-pagination">
+          <span id="productsCount"></span>
+          <div class="pg-btns"><div class="pg-btn active">1</div><div class="pg-btn">2</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▌ MOVIMIENTOS INVENTARIO ▌ -->
+    <div class="page" id="page-inventory">
+      <div class="section-hdr">
+        <div class="section-hdr-title">Movimientos de Inventario</div>
+        <button class="btn btn-primary btn-sm" onclick="openModal('movModal')">+ Registrar movimiento</button>
+      </div>
+      <div class="table-wrap">
+        <div class="table-controls">
+          <input class="tbl-search" type="text" placeholder="Buscar producto…">
+          <select class="tbl-select">
+            <option value="">Todos los tipos</option>
+            <option>Entrada</option><option>Salida</option>
+            <option>Ajuste</option><option>Reserva</option>
+          </select>
+          <input type="date" class="tbl-select" style="cursor:pointer">
+        </div>
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Producto</th><th>Tipo</th><th>Cantidad</th><th>Stock ant.</th><th>Stock nuevo</th><th>Referencia</th><th>Usuario</th>
+          </tr></thead>
+          <tbody id="inventoryTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ▌ ALERTAS STOCK ▌ -->
+    <div class="page" id="page-alerts">
+      <div class="section-hdr">
+        <div class="section-hdr-title">⚠️ Alertas de Stock</div>
+        <button class="btn btn-ghost btn-sm">Marcar todas como leídas</button>
+      </div>
+      <div id="alertsGrid" style="display:flex;flex-direction:column;gap:.8rem"></div>
+    </div>
+
+    <!-- ▌ REPORTES ML ▌ -->
+    <div class="page" id="page-reports">
+      <div class="section-hdr">
+        <div class="section-hdr-title">🤖 Reportes Inteligentes · Machine Learning</div>
+        <div class="badge badge-verified">✨ Motor ML activo</div>
+      </div>
+
+      <div style="background:rgba(29,78,216,.06);border:1px solid rgba(29,78,216,.2);border-radius:var(--r);padding:1rem;margin-bottom:1.2rem;font-size:.85rem;color:#93C5FD">
+        <strong>🧠 Microservicio Python (FastAPI)</strong> — Los reportes son generados por modelos de Machine Learning entrenados con el historial de ventas.
+        En producción, este panel consume el endpoint <code>GET /api/ml/reports</code>. Los datos mostrados son simulados para prototipo.
+      </div>
+
+      <div class="report-grid">
+        <!-- Predicción demanda -->
+        <div class="report-panel">
+          <div class="report-panel-title">📈 Predicción de demanda (próximas 4 semanas)</div>
+          <div class="chart-bar-horiz" id="demandForecast"></div>
+        </div>
+        <!-- Riesgo de quiebre -->
+        <div class="report-panel">
+          <div class="report-panel-title">🚨 Riesgo de quiebre de stock</div>
+          <div id="stockRisk" style="display:flex;flex-direction:column;gap:.5rem"></div>
+        </div>
+        <!-- Top productos -->
+        <div class="report-panel">
+          <div class="report-panel-title">🏆 Productos más vendidos</div>
+          <div class="chart-bar-horiz" id="topProducts"></div>
+        </div>
+        <!-- Segmentación clientes -->
+        <div class="report-panel">
+          <div class="report-panel-title">👥 Segmentación de clientes</div>
+          <div id="clientSegments" style="display:flex;flex-direction:column;gap:.5rem"></div>
+        </div>
+      </div>
+
+      <!-- Recomendaciones -->
+      <div class="report-panel" style="margin-top:0">
+        <div class="report-panel-title">💡 Recomendaciones automáticas del sistema</div>
+        <div id="mlRecs" style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem"></div>
+      </div>
+    </div>
+
+    <!-- ▌ GESTIÓN WEB ▌ -->
+    <div class="page" id="page-catalog-web">
+      <div class="section-hdr">
+        <div class="section-hdr-title">🌐 Control de la Tienda Virtual</div>
+      </div>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-hdr"><span style="font-weight:700">🛍️ Estado de la tienda</span><span class="badge badge-verified">En línea</span></div>
+          <div class="card-body">
+            <div class="card-row"><span class="card-key">Productos publicados</span><span class="card-val">16</span></div>
+            <div class="card-row"><span class="card-key">Productos ocultos</span><span class="card-val">0</span></div>
+            <div class="card-row"><span class="card-key">Visitas hoy</span><span class="card-val">47</span></div>
+            <div class="card-row"><span class="card-key">Carrito abandonado</span><span class="card-val">3</span></div>
+            <div style="margin-top:1rem;display:flex;gap:.5rem">
+              <button class="btn btn-ghost btn-sm" style="flex:1">Modo mantenimiento</button>
+              <button class="btn btn-success btn-sm" style="flex:1" onclick="window.open('SmartphoneWorld_Tienda.html','_blank')">Ver tienda →</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span style="font-weight:700">💰 Precios y descuentos</span></div>
+          <div class="card-body">
+            <div class="card-row"><span class="card-key">Tasa BCV (Bs/USD)</span><span class="card-val" style="color:var(--teal)">Bs. 45.30</span></div>
+            <div class="card-row"><span class="card-key">Tasa Binance (USDT)</span><span class="card-val" style="color:var(--teal)">$1.000</span></div>
+            <div class="card-row"><span class="card-key">Mín. compra mayor</span><span class="card-val">$50.00</span></div>
+            <div class="card-row"><span class="card-key">Mín. unidades mayor</span><span class="card-val">10 uds</span></div>
+            <div style="margin-top:1rem">
+              <button class="btn btn-primary btn-sm" onclick="showToast('Tasas actualizadas')">Actualizar tasas</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span style="font-weight:700">💳 Métodos de pago</span></div>
+          <div class="card-body">
+            <div class="card-row"><span class="card-key">Transferencia bancaria</span><span class="badge badge-verified">Activo</span></div>
+            <div class="card-row"><span class="card-key">Pago Móvil</span><span class="badge badge-verified">Activo</span></div>
+            <div class="card-row"><span class="card-key">Binance Pay</span><span class="badge badge-verified">Activo</span></div>
+            <div class="card-row"><span class="card-key">Divisas en físico</span><span class="badge badge-verified">Activo</span></div>
+            <div style="margin-top:1rem">
+              <button class="btn btn-ghost btn-sm">Configurar datos bancarios</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span style="font-weight:700">📊 Búsqueda inteligente</span></div>
+          <div class="card-body">
+            <div class="card-row"><span class="card-key">Búsquedas hoy</span><span class="card-val">23</span></div>
+            <div class="card-row"><span class="card-key">Top búsqueda</span><span class="card-val">Audífonos</span></div>
+            <div class="card-row"><span class="card-key">Sin resultados</span><span class="card-val">2</span></div>
+            <div class="card-row"><span class="card-key">Motor TF-IDF</span><span class="badge badge-verified">Activo</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▌ CONFIGURACIÓN ▌ -->
+    <div class="page" id="page-settings">
+      <div class="section-hdr">
+        <div class="section-hdr-title">⚙️ Configuración del Sistema</div>
+      </div>
+      <div class="cards-grid">
+        <div class="card">
+          <div class="card-hdr"><span style="font-weight:700">🏢 Datos de la empresa</span></div>
+          <div class="card-body">
+            <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" value="Smartphone World C.A."></div>
+            <div class="form-group"><label class="form-label">RIF</label><input class="form-input" value="J-XXXXXXXXX-X"></div>
+            <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" value="0271-XXXXXXX"></div>
+            <button class="btn btn-primary btn-sm" onclick="showToast('Datos guardados')">Guardar</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span style="font-weight:700">👤 Mi perfil</span></div>
+          <div class="card-body">
+            <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" value="Superadmin"></div>
+            <div class="form-group"><label class="form-label">Email</label><input class="form-input" value="admin@swworld.com"></div>
+            <div class="form-group"><label class="form-label">Nueva contraseña</label><input class="form-input" type="password" placeholder="••••••••"></div>
+            <button class="btn btn-primary btn-sm" onclick="showToast('Perfil actualizado')">Actualizar</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span style="font-weight:700">🔔 Notificaciones</span></div>
+          <div class="card-body">
+            <div class="card-row"><span class="card-key">Alerta stock bajo</span><span class="badge badge-verified">Activo</span></div>
+            <div class="card-row"><span class="card-key">Nuevo pedido</span><span class="badge badge-verified">Activo</span></div>
+            <div class="card-row"><span class="card-key">Pago recibido</span><span class="badge badge-verified">Activo</span></div>
+            <div class="card-row"><span class="card-key">Reporte semanal</span><span class="badge badge-verified">Activo</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span style="font-weight:700">🗄️ Sistema</span></div>
+          <div class="card-body">
+            <div class="card-row"><span class="card-key">Versión</span><span class="card-val">1.0.0</span></div>
+            <div class="card-row"><span class="card-key">Laravel</span><span class="card-val">11.x</span></div>
+            <div class="card-row"><span class="card-key">BD</span><span class="card-val">MySQL 8.0</span></div>
+            <div class="card-row"><span class="card-key">ML Service</span><span class="badge badge-verified">Online</span></div>
+            <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="showToast('Caché limpiado ✓')">Limpiar caché</button>
+              <button class="btn btn-ghost btn-sm" onclick="showToast('Respaldo iniciado ✓')">Respaldo BD</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+
+<!-- Product Modal -->
+<div class="overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">Nuevo Producto</div>
+      <div class="modal-close" onclick="closeModal('productModal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Código</label><input class="form-input" placeholder="ADC-001"></div>
+        <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" placeholder="Audífonos Xiaomi…"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Categoría</label>
+          <select class="form-select"><option>Audífonos</option><option>Fundas</option><option>Cargadores</option><option>Cables</option><option>Protectores</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Marca</label>
+          <select class="form-select"><option>Xiaomi</option><option>Samsung</option><option>Apple</option><option>Baseus</option><option>Anker</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Precio Detal (USD)</label><input class="form-input" type="number" placeholder="5.00"></div>
+        <div class="form-group"><label class="form-label">Precio Mayor (USD)</label><input class="form-input" type="number" placeholder="4.00"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Costo (USD)</label><input class="form-input" type="number" placeholder="2.00"></div>
+        <div class="form-group"><label class="form-label">Stock inicial</label><input class="form-input" type="number" placeholder="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Stock mínimo alerta</label><input class="form-input" type="number" placeholder="5"></div>
+        <div class="form-group"><label class="form-label">Mín. unidades mayorista</label><input class="form-input" type="number" placeholder="10"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-textarea" placeholder="Descripción del producto…"></textarea></div>
+      <div class="form-group">
+        <label class="form-label">Publicado en tienda web</label>
+        <select class="form-select"><option>Sí — visible al público</option><option>No — oculto</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('productModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveProduct()">Guardar producto</button>
+    </div>
+  </div>
+</div>
+
+<!-- Movement Modal -->
+<div class="overlay" id="movModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">Registrar Movimiento de Inventario</div>
+      <div class="modal-close" onclick="closeModal('movModal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label class="form-label">Producto</label>
+        <select class="form-select" id="movProduct">
+          <option value="">Seleccionar producto…</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Tipo</label>
+          <select class="form-select" id="movType">
+            <option value="entrada">Entrada (compra/recepción)</option>
+            <option value="salida">Salida (venta manual)</option>
+            <option value="ajuste">Ajuste de inventario</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Cantidad</label>
+          <input class="form-input" type="number" id="movQty" placeholder="0" min="1">
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Referencia (factura, nro. orden…)</label><input class="form-input" id="movRef" placeholder="FAC-2026-001"></div>
+      <div class="form-group"><label class="form-label">Notas</label><textarea class="form-textarea" id="movNotes" placeholder="Motivo del movimiento…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('movModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveMovement()">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Client Modal -->
+<div class="overlay" id="clientModal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-title">Agregar Cliente</div>
+      <div class="modal-close" onclick="closeModal('clientModal')">✕</div>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Nombre</label><input class="form-input" placeholder="Juan"></div>
+        <div class="form-group"><label class="form-label">Apellido</label><input class="form-input" placeholder="Pérez"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Cédula</label><input class="form-input" placeholder="V-12345678"></div>
+      <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" placeholder="0414-1234567"></div>
+      <div class="form-group"><label class="form-label">Correo</label><input class="form-input" type="email" placeholder="cliente@email.com"></div>
+      <div class="form-group"><label class="form-label">Ciudad</label><input class="form-input" placeholder="Valera"></div>
+      <div class="form-group"><label class="form-label">Dirección</label><textarea class="form-textarea" placeholder="Dirección completa…"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('clientModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="showToast('Cliente registrado ✓');closeModal('clientModal')">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Order Detail Modal -->
+<div class="overlay" id="orderModal">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="orderModalTitle">Pedido #SW-2026-0001</div>
+      <div class="modal-close" onclick="closeModal('orderModal')">✕</div>
+    </div>
+    <div class="modal-body" id="orderModalBody"></div>
+    <div class="modal-footer" id="orderModalFooter"></div>
+  </div>
+</div>
+
+<!-- Payment Review Modal -->
+<div class="overlay" id="paymentModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-hdr">
+      <div class="modal-title">Revisión de Comprobante</div>
+      <div class="modal-close" onclick="closeModal('paymentModal')">✕</div>
+    </div>
+    <div class="modal-body" id="paymentModalBody"></div>
+    <div class="modal-footer" id="paymentModalFooter"></div>
+  </div>
+</div>
+
+<div class="toast-box" id="toastBox"></div>
+
+<script>
+/* ════════════════ DATA ════════════════ */
+const PRODUCTS = [
+  {id:1,code:'ADC-1',name:'Audífonos Infinix',brand:'Infinix',category:'Audífonos',retail:2.00,wholesale:1.60,cost:.60,stock:21,minStock:3,active:true},
+  {id:2,code:'ADC-2',name:'Audífonos Xiaomi',brand:'Xiaomi',category:'Audífonos',retail:2.00,wholesale:1.60,cost:.60,stock:15,minStock:3,active:true},
+  {id:3,code:'ADC-3',name:'Audífonos Hi-Treek HT-204',brand:'Hi-Treek',category:'Audífonos',retail:5.00,wholesale:4.00,cost:2.50,stock:5,minStock:3,active:true},
+  {id:4,code:'ADI-1',name:'Audífonos Hyundai',brand:'Hyundai',category:'Audífonos',retail:25.00,wholesale:20.00,cost:15.00,stock:1,minStock:3,active:true},
+  {id:5,code:'FUN-1',name:'Funda Samsung A14',brand:'Samsung',category:'Fundas',retail:3.50,wholesale:2.80,cost:1.20,stock:45,minStock:5,active:true},
+  {id:6,code:'FUN-2',name:'Funda iPhone 15',brand:'Apple',category:'Fundas',retail:5.00,wholesale:4.00,cost:2.00,stock:30,minStock:5,active:true},
+  {id:7,code:'FUN-3',name:'Funda Xiaomi Redmi 12',brand:'Xiaomi',category:'Fundas',retail:3.00,wholesale:2.40,cost:1.00,stock:28,minStock:5,active:true},
+  {id:8,code:'CAR-1',name:'Cargador USB-C 33W',brand:'Anker',category:'Cargadores',retail:8.00,wholesale:6.50,cost:3.50,stock:60,minStock:10,active:true},
+  {id:9,code:'CAR-2',name:'Cargador Inalámbrico 15W',brand:'Baseus',category:'Cargadores',retail:12.00,wholesale:9.50,cost:5.00,stock:18,minStock:5,active:true},
+  {id:10,code:'CAB-1',name:'Cable USB-C 2m Trenzado',brand:'Baseus',category:'Cables',retail:4.00,wholesale:3.20,cost:1.50,stock:85,minStock:10,active:true},
+  {id:11,code:'CAB-2',name:'Cable Lightning 1m',brand:'Apple',category:'Cables',retail:6.00,wholesale:4.80,cost:2.50,stock:22,minStock:5,active:true},
+  {id:12,code:'PRO-1',name:'Protector Samsung A54',brand:'Samsung',category:'Protectores',retail:2.50,wholesale:1.80,cost:.80,stock:70,minStock:10,active:true},
+  {id:13,code:'PRO-2',name:'Protector 3D iPhone 14',brand:'Apple',category:'Protectores',retail:4.00,wholesale:3.20,cost:1.50,stock:35,minStock:5,active:true},
+  {id:14,code:'BAT-1',name:'Batería Portátil 10000mAh',brand:'Xiaomi',category:'Baterías',retail:18.00,wholesale:14.00,cost:8.00,stock:12,minStock:3,active:true},
+  {id:15,code:'SOP-1',name:'Soporte Auto Magnético',brand:'Baseus',category:'Soportes',retail:7.00,wholesale:5.50,cost:3.00,stock:40,minStock:5,active:true},
+  {id:16,code:'SOP-2',name:'Soporte Escritorio Ajustable',brand:'Anker',category:'Soportes',retail:9.00,wholesale:7.20,cost:4.00,stock:20,minStock:3,active:true},
+];
+
+const CLIENTS = [
+  {id:1,name:'María González',cedula:'V-12345678',phone:'0414-1234567',city:'Valera',orders:5,total:87.50,active:true},
+  {id:2,name:'Pedro Alvarado',cedula:'V-23456789',phone:'0424-2345678',city:'Trujillo',orders:2,total:34.00,active:true},
+  {id:3,name:'Laura Mendoza',cedula:'V-34567890',phone:'0416-3456789',city:'Valera',orders:8,total:156.20,active:true},
+  {id:4,name:'Carlos Rojas',cedula:'V-45678901',phone:'0426-4567890',city:'Motatán',orders:1,total:12.00,active:false},
+  {id:5,name:'Ana Pérez',cedula:'V-56789012',phone:'0412-5678901',city:'Valera',orders:3,total:45.00,active:true},
+  {id:6,name:'Luis Ramírez',cedula:'V-67890123',phone:'0414-6789012',city:'Escuque',orders:6,total:112.50,active:true},
+];
+
+const ORDERS = [
+  {id:1,num:'SW-2026-0001',client:'María González',type:'detal',items:3,total:24.50,payment:'transferencia',status:'payment_uploaded',date:'2026-06-15'},
+  {id:2,num:'SW-2026-0002',client:'Luis Ramírez',type:'mayor',items:8,total:87.00,payment:'binance',status:'payment_verified',date:'2026-06-15'},
+  {id:3,num:'SW-2026-0003',client:'Ana Pérez',type:'detal',items:1,total:5.00,payment:'transferencia',status:'pending',date:'2026-06-14'},
+  {id:4,num:'SW-2026-0004',client:'Pedro Alvarado',type:'detal',items:2,total:16.00,payment:'fisico',status:'pending',date:'2026-06-14'},
+  {id:5,num:'SW-2026-0005',client:'Laura Mendoza',type:'mayor',items:15,total:145.00,payment:'transferencia',status:'payment_uploaded',date:'2026-06-13'},
+  {id:6,num:'SW-2026-0006',client:'Carlos Rojas',type:'detal',items:1,total:12.00,payment:'binance',status:'delivered',date:'2026-06-12'},
+];
+
+const MOVEMENTS = [
+  {date:'2026-06-15',product:'Audífonos Xiaomi',type:'salida',qty:3,before:18,after:15,ref:'SW-2026-0002',user:'Admin'},
+  {date:'2026-06-15',product:'Funda iPhone 15',type:'entrada',qty:20,before:10,after:30,ref:'FAC-0234',user:'Superadmin'},
+  {date:'2026-06-14',product:'Cable USB-C 2m',type:'salida',qty:10,before:95,after:85,ref:'SW-2026-0001',user:'Admin'},
+  {date:'2026-06-14',product:'Audífonos Hyundai',type:'ajuste',qty:-1,before:2,after:1,ref:'AJUSTE-INV',user:'Superadmin'},
+  {date:'2026-06-13',product:'Cargador USB-C 33W',type:'entrada',qty:30,before:30,after:60,ref:'FAC-0230',user:'Admin'},
+  {date:'2026-06-12',product:'Protector Samsung A54',type:'salida',qty:5,before:75,after:70,ref:'SW-2026-0006',user:'Admin'},
+];
+
+const PAYMENTS_PENDING = [
+  {id:1,order:'SW-2026-0001',client:'María González',amount:24.50,method:'Transferencia',ref:'00912834721',date:'2026-06-15 14:32',checks:{mime:true,size:true,exif:false,hash:true,duplicate:true}},
+  {id:2,order:'SW-2026-0005',client:'Laura Mendoza',amount:145.00,method:'Transferencia',ref:'00918274610',date:'2026-06-13 10:15',checks:{mime:true,size:true,exif:true,hash:true,duplicate:true}},
+];
+
+const emojis = {Audífonos:'🎧',Fundas:'📱',Cargadores:'🔌',Cables:'🔗',Protectores:'🛡️',Baterías:'🔋',Soportes:'🚗'};
+
+/* ════════════════ NAVIGATION ════════════════ */
+function showPage(id, navEl) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(navEl){
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    navEl.classList.add('active');
+  }
+  const titles = {
+    dashboard:'Dashboard',orders:'Gestión de Pedidos',payments:'Verificar Pagos',
+    clients:'Clientes',products:'Productos',inventory:'Movimientos de Inventario',
+    alerts:'Alertas de Stock',reports:'Reportes ML',
+    'catalog-web':'Control de Tienda Web',settings:'Configuración'
+  };
+  document.getElementById('topbarTitle').textContent = titles[id] || id;
+
+  if(id==='dashboard') renderDashboard();
+  if(id==='orders') renderOrders();
+  if(id==='products') renderProducts();
+  if(id==='clients') renderClients();
+  if(id==='inventory') renderInventory();
+  if(id==='alerts') renderAlerts();
+  if(id==='payments') renderPayments();
+  if(id==='reports') renderReports();
+}
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+/* ════════════════ DASHBOARD ════════════════ */
+function renderDashboard(){
+  // Sales by category
+  const catSales = [{cat:'Fundas',val:380,color:'#1D4ED8'},{cat:'Audífonos',val:290,color:'#0D9488'},{cat:'Cargadores',val:210,color:'#7C3AED'},{cat:'Cables',val:180,color:'#059669'},{cat:'Protectores',val:120,color:'#EA580C'}];
+  const max = catSales[0].val;
+  document.getElementById('salesByCat').innerHTML = catSales.map(r=>`
+    <div class="chart-bar-row">
+      <span class="chart-bar-label">${r.cat}</span>
+      <div class="chart-bar-track">
+        <div class="chart-bar-fill" style="width:${r.val/max*100}%;background:${r.color}">$${r.val}</div>
+      </div>
+      <span class="chart-bar-val">$${r.val}</span>
+    </div>`).join('');
+
+  // Weekly trend
+  const weeks = [85,110,95,130,145,120,160,175];
+  const wmax = Math.max(...weeks);
+  document.getElementById('weeklyChart').innerHTML = weeks.map((v,i)=>`
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div style="font-size:.6rem;color:var(--muted)">$${v}</div>
+      <div class="mini-bar" style="height:${v/wmax*70}px;background:${i===weeks.length-1?'var(--teal)':'var(--blue)'}"></div>
+      <div style="font-size:.6rem;color:var(--muted)">S${i+1}</div>
+    </div>`).join('');
+
+  // Recent orders
+  document.getElementById('dashOrders').innerHTML = ORDERS.slice(0,5).map(o=>`
+    <tr>
+      <td><span style="font-family:monospace;font-weight:700;color:var(--teal);font-size:.82rem">${o.num}</span></td>
+      <td>${o.client}</td>
+      <td style="font-weight:700">$${o.total.toFixed(2)}</td>
+      <td><span class="badge badge-${o.status}">${statusLabel(o.status)}</span></td>
+      <td style="color:var(--muted);font-size:.8rem">${o.date}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openOrderDetail(${o.id})">Ver</button></td>
+    </tr>`).join('');
+}
+
+function statusLabel(s){
+  return {pending:'Pendiente',payment_uploaded:'Pago subido',payment_verified:'Pago verificado',
+    processing:'En proceso',delivered:'Entregado',cancelled:'Cancelado',
+    valid:'Válido',invalid:'Inválido',suspicious:'Sospechoso'}[s] || s;
+}
+
+/* ════════════════ ORDERS ════════════════ */
+function renderOrders(search=''){
+  const q = search.toLowerCase();
+  const sf = document.getElementById('orderStatusFilter')?.value||'';
+  let data = ORDERS.filter(o=>
+    (!q || o.num.toLowerCase().includes(q) || o.client.toLowerCase().includes(q)) &&
+    (!sf || o.status===sf)
+  );
+  document.getElementById('ordersTable').innerHTML = data.map(o=>`
+    <tr>
+      <td><span style="font-family:monospace;font-weight:700;color:var(--teal);font-size:.82rem">${o.num}</span></td>
+      <td>${o.client}</td>
+      <td><span class="badge badge-${o.type==='mayor'?'processing':'uploaded'}">${o.type==='mayor'?'Mayor':'Detal'}</span></td>
+      <td style="text-align:center">${o.items}</td>
+      <td style="font-weight:700">$${o.total.toFixed(2)}</td>
+      <td style="font-size:.78rem;color:var(--muted)">${o.payment}</td>
+      <td><span class="badge badge-${o.status}">${statusLabel(o.status)}</span></td>
+      <td style="color:var(--muted);font-size:.78rem">${o.date}</td>
+      <td>
+        <div style="display:flex;gap:.3rem">
+          <button class="btn btn-ghost btn-sm" onclick="openOrderDetail(${o.id})">Ver</button>
+          ${o.status==='pending'?`<button class="btn btn-success btn-sm" onclick="advanceOrder(${o.id})">▶</button>`:''}
+          ${o.status!=='cancelled'&&o.status!=='delivered'?`<button class="btn btn-danger btn-sm" onclick="cancelOrder(${o.id})">✕</button>`:''}
+        </div>
+      </td>
+    </tr>`).join('');
+  document.getElementById('ordersCount').textContent = `Mostrando ${data.length} de ${ORDERS.length} pedidos`;
+}
+
+function openOrderDetail(id){
+  const o = ORDERS.find(x=>x.id===id);
+  document.getElementById('orderModalTitle').textContent = 'Pedido '+o.num;
+  document.getElementById('orderModalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem">
+      <div>
+        <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:.4rem">Cliente</div>
+        <div style="font-weight:600">${o.client}</div>
+        <div style="font-size:.8rem;color:var(--muted)">Tipo: ${o.type==='mayor'?'Al mayor':'Al detal'}</div>
+      </div>
+      <div>
+        <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:.4rem">Estado</div>
+        <span class="badge badge-${o.status}">${statusLabel(o.status)}</span>
+      </div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1rem">
+      <div style="font-size:.75rem;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:.5rem">Resumen</div>
+      <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:.3rem 0;border-bottom:1px solid var(--border)">
+        <span>Método de pago</span><span style="font-weight:600">${o.payment}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.85rem;padding:.3rem 0;border-bottom:1px solid var(--border)">
+        <span>Items</span><span style="font-weight:600">${o.items} productos</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:1rem;padding:.5rem 0;font-weight:800">
+        <span>Total</span><span style="color:var(--teal)">$${o.total.toFixed(2)}</span>
+      </div>
+    </div>
+    <div style="font-size:.75rem;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:.4rem">Fecha del pedido</div>
+    <div style="font-size:.88rem">${o.date}</div>`;
+  document.getElementById('orderModalFooter').innerHTML = `
+    <button class="btn btn-ghost" onclick="closeModal('orderModal')">Cerrar</button>
+    ${o.status!=='delivered'&&o.status!=='cancelled'?`<button class="btn btn-success" onclick="advanceOrder(${o.id});closeModal('orderModal')">Avanzar estado</button>`:''}`;
+  openModal('orderModal');
+}
+
+function advanceOrder(id){
+  const o = ORDERS.find(x=>x.id===id);
+  const flow = ['pending','payment_uploaded','payment_verified','processing','delivered'];
+  const i = flow.indexOf(o.status);
+  if(i<flow.length-1){ o.status=flow[i+1]; showToast('Estado actualizado: '+statusLabel(o.status)); renderOrders(); }
+}
+
+function cancelOrder(id){
+  const o = ORDERS.find(x=>x.id===id);
+  o.status='cancelled'; showToast('Pedido cancelado','warn'); renderOrders();
+}
+
+/* ════════════════ PAYMENTS ════════════════ */
+function renderPayments(){
+  const g = document.getElementById('paymentsGrid');
+  if(!PAYMENTS_PENDING.length){
+    g.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)"><div style="font-size:3rem;margin-bottom:.8rem">✅</div><div>No hay comprobantes pendientes de verificación</div></div>`;
+    return;
+  }
+  g.innerHTML = PAYMENTS_PENDING.map(p=>{
+    const c = p.checks;
+    const allOk = Object.values(c).every(Boolean);
+    return `
+    <div class="card">
+      <div class="card-hdr">
+        <div>
+          <div style="font-weight:700;font-size:.9rem">Pedido ${p.order}</div>
+          <div style="font-size:.75rem;color:var(--muted)">${p.client}</div>
+        </div>
+        <span class="badge badge-pending">Pendiente</span>
+      </div>
+      <div class="card-body">
+        <div class="receipt-preview">📄</div>
+        <table class="meta-table">
+          <tr><td>Método</td><td>${p.method}</td></tr>
+          <tr><td>Monto</td><td style="color:var(--teal)">$${p.amount.toFixed(2)}</td></tr>
+          <tr><td>Referencia</td><td style="font-family:monospace">${p.ref}</td></tr>
+          <tr><td>Subido</td><td>${p.date}</td></tr>
+        </table>
+        <div style="margin-top:.8rem">
+          <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:.4rem">Validaciones automáticas</div>
+          <div class="security-row ${c.mime?'sec-ok':'sec-fail'}">
+            ${c.mime?'✅':'❌'} Tipo MIME válido (imagen real)
+          </div>
+          <div class="security-row ${c.size?'sec-ok':'sec-fail'}">
+            ${c.size?'✅':'❌'} Tamaño dentro del límite (5 MB)
+          </div>
+          <div class="security-row ${c.exif?'sec-ok':'sec-warn'}">
+            ${c.exif?'✅':'⚠️'} ${c.exif?'Sin evidencia de edición (EXIF limpio)':'EXIF: posible edición detectada'}
+          </div>
+          <div class="security-row ${c.hash?'sec-ok':'sec-fail'}">
+            ${c.hash?'✅':'❌'} Hash único (sin duplicados)
+          </div>
+          <div class="security-row ${c.duplicate?'sec-ok':'sec-fail'}">
+            ${c.duplicate?'✅':'❌'} No reutilizado en pedidos anteriores
+          </div>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-top:1rem">
+          <button class="btn btn-danger" style="flex:1" onclick="rejectPayment(${p.id})">✕ Rechazar</button>
+          <button class="btn btn-success" style="flex:1" onclick="approvePayment(${p.id})">✓ Aprobar pago</button>
+        </div>
+        ${!allOk?`<div style="font-size:.75rem;color:var(--orange);margin-top:.5rem;text-align:center">⚠️ Se detectaron alertas. Revisa antes de aprobar.</div>`:''}
+      </div>
+    </div>`;}).join('');
+  document.getElementById('payBadge').textContent = PAYMENTS_PENDING.length;
+}
+
+function approvePayment(id){
+  const i = PAYMENTS_PENDING.findIndex(p=>p.id===id);
+  const p = PAYMENTS_PENDING[i];
+  const o = ORDERS.find(x=>x.num===p.order);
+  if(o) o.status='payment_verified';
+  PAYMENTS_PENDING.splice(i,1);
+  showToast('✅ Pago aprobado · Pedido '+p.order);
+  renderPayments();
+  document.getElementById('payBadge').textContent = PAYMENTS_PENDING.length || '';
+}
+
+function rejectPayment(id){
+  const i = PAYMENTS_PENDING.findIndex(p=>p.id===id);
+  const p = PAYMENTS_PENDING[i];
+  PAYMENTS_PENDING.splice(i,1);
+  showToast('Pago rechazado · '+p.order,'warn');
+  renderPayments();
+}
+
+/* ════════════════ PRODUCTS ════════════════ */
+function renderProducts(search=''){
+  const q = (search||'').toLowerCase();
+  const data = PRODUCTS.filter(p=>!q||p.name.toLowerCase().includes(q)||p.code.toLowerCase().includes(q)||p.brand.toLowerCase().includes(q));
+  const stockColor = p => p.stock<=p.minStock ? 'var(--red)' : p.stock<=p.minStock*2 ? 'var(--orange)' : 'var(--green)';
+  const stockPct = p => Math.min(100, Math.round(p.stock/(p.minStock*4)*100));
+  document.getElementById('productsTable').innerHTML = data.map(p=>`
+    <tr>
+      <td>
+        <div class="prod-row">
+          <div class="prod-thumb">${emojis[p.category]||'📦'}</div>
+          <div><div class="prod-name">${p.name}</div><div class="prod-code">${p.code} · ${p.brand}</div></div>
+        </div>
+      </td>
+      <td style="color:var(--muted);font-size:.82rem">${p.category}</td>
+      <td style="font-weight:700">$${p.retail.toFixed(2)}</td>
+      <td style="color:var(--teal);font-weight:600">$${p.wholesale.toFixed(2)}</td>
+      <td style="font-weight:700;color:${stockColor(p)}">${p.stock}</td>
+      <td>
+        <div class="stock-bar-wrap">
+          <div class="stock-bar"><div class="stock-bar-fill" style="width:${stockPct(p)}%;background:${stockColor(p)}"></div></div>
+          <div class="stock-pct">${stockPct(p)}%</div>
+        </div>
+      </td>
+      <td><span class="badge ${p.active?'badge-verified':'badge-cancelled'}">${p.active?'Activo':'Inactivo'}</span></td>
+      <td>
+        <div style="display:flex;gap:.3rem">
+          <button class="btn btn-ghost btn-sm" onclick="showToast('Editar: ${p.name}')">✏️</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleProduct(${p.id})">🔄</button>
+          <button class="btn btn-danger btn-sm" onclick="showToast('Eliminado: ${p.name}','warn')">🗑️</button>
+        </div>
+      </td>
+    </tr>`).join('');
+  document.getElementById('productsCount').textContent = `${data.length} de ${PRODUCTS.length} productos`;
+
+  // populate mov modal dropdown
+  const sel = document.getElementById('movProduct');
+  if(sel) sel.innerHTML = '<option value="">Seleccionar…</option>' + PRODUCTS.map(p=>`<option value="${p.id}">[${p.code}] ${p.name} (Stock: ${p.stock})</option>`).join('');
+}
+
+function toggleProduct(id){
+  const p = PRODUCTS.find(x=>x.id===id);
+  p.active=!p.active;
+  showToast(p.name+' '+(p.active?'activado':'desactivado'));
+  renderProducts();
+}
+
+/* ════════════════ CLIENTS ════════════════ */
+function renderClients(search=''){
+  const q = (search||'').toLowerCase();
+  const data = CLIENTS.filter(c=>!q||c.name.toLowerCase().includes(q)||c.cedula.includes(q));
+  document.getElementById('clientsTable').innerHTML = data.map(c=>`
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:#fff;flex-shrink:0">${c.name[0]}</div>
+          <div><div style="font-weight:600;font-size:.88rem">${c.name}</div></div>
+        </div>
+      </td>
+      <td style="font-family:monospace;font-size:.82rem">${c.cedula}</td>
+      <td style="font-size:.82rem">${c.phone}</td>
+      <td style="font-size:.82rem;color:var(--muted)">${c.city}</td>
+      <td style="text-align:center;font-weight:700">${c.orders}</td>
+      <td style="font-weight:700;color:var(--teal)">$${c.total.toFixed(2)}</td>
+      <td><span class="badge ${c.active?'badge-verified':'badge-cancelled'}">${c.active?'Activo':'Inactivo'}</span></td>
+      <td><div style="display:flex;gap:.3rem">
+        <button class="btn btn-ghost btn-sm" onclick="showToast('Historial de ${c.name}')">📋</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleClient(${c.id})">🔄</button>
+      </div></td>
+    </tr>`).join('');
+  document.getElementById('clientsCount').textContent = `${data.length} de ${CLIENTS.length} clientes`;
+}
+
+function toggleClient(id){
+  const c = CLIENTS.find(x=>x.id===id);
+  c.active=!c.active;
+  showToast(c.name+' '+(c.active?'activado':'desactivado'));
+  renderClients();
+}
+
+/* ════════════════ INVENTORY ════════════════ */
+function renderInventory(){
+  const typeColor = {entrada:'badge-verified',salida:'badge-cancelled',ajuste:'badge-pending',reserva:'badge-uploaded'};
+  document.getElementById('inventoryTable').innerHTML = MOVEMENTS.map(m=>`
+    <tr>
+      <td style="font-size:.8rem;color:var(--muted)">${m.date}</td>
+      <td style="font-size:.85rem;font-weight:500">${m.product}</td>
+      <td><span class="badge ${typeColor[m.type]||'badge-pending'}" style="text-transform:capitalize">${m.type}</span></td>
+      <td style="font-weight:700;color:${m.qty>0?'var(--green)':'var(--red)'}">
+        ${m.qty>0?'+':''}${m.qty}
+      </td>
+      <td style="text-align:center">${m.before}</td>
+      <td style="text-align:center;font-weight:700">${m.after}</td>
+      <td style="font-family:monospace;font-size:.78rem;color:var(--muted)">${m.ref}</td>
+      <td style="font-size:.78rem;color:var(--muted)">${m.user}</td>
+    </tr>`).join('');
+}
+
+/* ════════════════ ALERTS ════════════════ */
+function renderAlerts(){
+  const low = PRODUCTS.filter(p=>p.stock<=p.minStock);
+  document.getElementById('alertsGrid').innerHTML = low.map(p=>`
+    <div style="background:var(--surface);border:1px solid ${p.stock===0?'rgba(220,38,38,.4)':'rgba(234,88,12,.3)'};border-radius:var(--r);padding:1rem;display:flex;align-items:center;gap:1rem">
+      <div style="font-size:2rem">${emojis[p.category]||'📦'}</div>
+      <div style="flex:1">
+        <div style="font-weight:700">${p.name}</div>
+        <div style="font-size:.8rem;color:var(--muted)">${p.code} · ${p.category}</div>
+      </div>
+      <div style="text-align:center;min-width:80px">
+        <div style="font-size:1.6rem;font-weight:900;color:${p.stock===0?'var(--red)':'var(--orange)'}">${p.stock}</div>
+        <div style="font-size:.72rem;color:var(--muted)">unidades</div>
+      </div>
+      <div style="text-align:center;min-width:80px">
+        <div style="font-size:.78rem;color:var(--muted)">Mínimo</div>
+        <div style="font-weight:700">${p.minStock}</div>
+      </div>
+      <span class="badge ${p.stock===0?'badge-cancelled':'badge-low'}">${p.stock===0?'SIN STOCK':'BAJO'}</span>
+      <button class="btn btn-primary btn-sm" onclick="openModal('movModal')">Reponer</button>
+    </div>`).join('');
+  document.getElementById('alertBadge').textContent = low.length;
+}
+
+/* ════════════════ ML REPORTS ════════════════ */
+function renderReports(){
+  // Demand forecast
+  const demand = [{name:'Audífonos Xiaomi',forecast:28,trend:'up'},{name:'Cable USB-C 2m',forecast:45,trend:'up'},{name:'Funda iPhone 15',forecast:18,trend:'stable'},{name:'Cargador 33W',forecast:22,trend:'up'},{name:'Protector Samsung',forecast:35,trend:'dn'}];
+  const dm = Math.max(...demand.map(d=>d.forecast));
+  document.getElementById('demandForecast').innerHTML = demand.map(d=>`
+    <div class="chart-bar-row">
+      <span class="chart-bar-label">${d.name}</span>
+      <div class="chart-bar-track">
+        <div class="chart-bar-fill" style="width:${d.forecast/dm*100}%;background:${d.trend==='up'?'var(--teal)':d.trend==='dn'?'var(--orange)':'var(--blue)'}">${d.forecast} uds</div>
+      </div>
+      <span class="chart-bar-val" style="color:${d.trend==='up'?'var(--green)':d.trend==='dn'?'var(--orange)':'var(--muted)'}">
+        ${d.trend==='up'?'↑':d.trend==='dn'?'↓':'→'}
+      </span>
+    </div>`).join('');
+
+  // Stock risk
+  const risks = [{name:'Audífonos Hyundai',days:2,risk:'critical'},{name:'Audífonos HT-204',days:5,risk:'high'},{name:'Batería 10000mAh',days:12,risk:'medium'}];
+  document.getElementById('stockRisk').innerHTML = risks.map(r=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem .7rem;border-radius:7px;background:var(--surface2);border:1px solid var(--border)">
+      <span style="font-size:.83rem">${r.name}</span>
+      <span class="badge ${r.risk==='critical'?'badge-cancelled':r.risk==='high'?'badge-pending':'badge-uploaded'}">
+        ${r.days} días restantes
+      </span>
+    </div>`).join('');
+
+  // Top products
+  const top = [{name:'Cable USB-C',val:145},{name:'Protector Samsung',val:98},{name:'Funda iPhone 15',val:76},{name:'Cargador 33W',val:62},{name:'Audífonos Xiaomi',val:54}];
+  const tm = top[0].val;
+  document.getElementById('topProducts').innerHTML = top.map((p,i)=>`
+    <div class="chart-bar-row">
+      <span class="chart-bar-label">${p.name}</span>
+      <div class="chart-bar-track">
+        <div class="chart-bar-fill" style="width:${p.val/tm*100}%;background:${['#1D4ED8','#0D9488','#7C3AED','#059669','#EA580C'][i]}">${p.val} uds</div>
+      </div>
+      <span class="chart-bar-val">${p.val}</span>
+    </div>`).join('');
+
+  // Client segments
+  const segs = [{name:'Distribuidores (Mayor)',pct:28,color:'var(--teal)'},{name:'Clientes frecuentes',pct:45,color:'var(--blue)'},{name:'Clientes ocasionales',pct:27,color:'var(--muted)'}];
+  document.getElementById('clientSegments').innerHTML = segs.map(s=>`
+    <div style="margin-bottom:.4rem">
+      <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:.25rem">
+        <span>${s.name}</span><span style="font-weight:700;color:${s.color}">${s.pct}%</span>
+      </div>
+      <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${s.pct}%;background:${s.color};border-radius:4px"></div>
+      </div>
+    </div>`).join('');
+
+  // Recommendations
+  const recs = [
+    {icon:'📦',text:'Reponer stock de <strong>Audífonos Hyundai</strong> — se agotará en ~2 días según tendencia de ventas.',type:'warn'},
+    {icon:'💡',text:'Los <strong>cables USB-C</strong> tienen alta correlación con la venta de cargadores. Considera paquetes combinados.',type:'ok'},
+    {icon:'📈',text:'Las ventas de <strong>protectores Samsung</strong> aumentaron 34% este mes. Considerar aumento de stock mínimo.',type:'ok'},
+    {icon:'🎯',text:'3 clientes sin compras en 60 días. Candidatos para campaña de reactivación.',type:'info'},
+  ];
+  document.getElementById('mlRecs').innerHTML = recs.map(r=>`
+    <div class="security-row ${r.type==='warn'?'sec-warn':r.type==='ok'?'sec-ok':'sec-fail'}" style="align-items:center">
+      <span>${r.icon}</span>
+      <span style="font-size:.84rem">${r.text}</span>
+    </div>`).join('');
+}
+
+/* ════════════════ MODAL ════════════════ */
+function openModal(id){ document.getElementById(id).classList.add('active'); document.body.style.overflow='hidden'; }
+function closeModal(id){ document.getElementById(id).classList.remove('active'); document.body.style.overflow=''; }
+
+function saveProduct(){
+  showToast('✅ Producto guardado correctamente');
+  closeModal('productModal');
+  renderProducts();
+}
+
+function saveMovement(){
+  const pid = document.getElementById('movProduct').value;
+  const qty = parseInt(document.getElementById('movQty').value)||0;
+  const type = document.getElementById('movType').value;
+  if(!pid||!qty){ showToast('Completa los campos requeridos','warn'); return; }
+  const p = PRODUCTS.find(x=>x.id==pid);
+  const before = p.stock;
+  p.stock += type==='entrada'?qty:type==='salida'?-qty:qty;
+  p.stock = Math.max(0, p.stock);
+  MOVEMENTS.unshift({date:new Date().toISOString().split('T')[0],product:p.name,type,qty:type==='entrada'?qty:-qty,before,after:p.stock,ref:document.getElementById('movRef').value||'Manual',user:'Superadmin'});
+  showToast(`✅ Movimiento registrado · ${p.name} → Stock: ${p.stock}`);
+  closeModal('movModal');
+  renderInventory();
+  renderProducts();
+  renderAlerts();
+}
+
+/* ════════════════ TOAST ════════════════ */
+function showToast(msg, type='ok'){
+  const t = document.createElement('div');
+  t.className = 'toast'+(type==='warn'?' warn':type==='err'?' err':'');
+  t.textContent = msg;
+  document.getElementById('toastBox').appendChild(t);
+  setTimeout(()=>t.remove(), 3500);
+}
+
+/* ════════════════ THEME ════════════════ */
+function toggleTheme(){
+  const d = document.documentElement;
+  const dark = d.getAttribute('data-theme')==='dark';
+  d.setAttribute('data-theme', dark?'light':'dark');
+  document.getElementById('themeBtn').textContent = dark?'☀️':'🌙';
+}
+
+/* ════════════════ GLOBAL SEARCH ════════════════ */
+function globalSearch(q){
+  if(q.length<2) return;
+  // Could filter across all entities — currently just a hint
+}
+
+/* ════════════════ INIT ════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  renderDashboard();
+  renderProducts(); // pre-populate mov dropdown
+
+  // Close overlays on backdrop click
+  document.querySelectorAll('.overlay').forEach(o=>{
+    o.addEventListener('click', e=>{ if(e.target===o) closeModal(o.id); });
+  });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.overlay.active').forEach(o=>closeModal(o.id)); });
+});
+</script>
+</body>
+</html>

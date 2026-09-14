@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Smartphone World</title>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+<script>
+    // Alpine store for the cart using localStorage
+    document.addEventListener('alpine:init', () => {
+        Alpine.store('cart', {
+            items: JSON.parse(localStorage.getItem('sw_cart') || '[]'),
+            add(product, qty = 1, type = 'retail') {
+                const existing = this.items.find(i => i.id === product.id && i.type === type);
+                if (existing) existing.qty += Number(qty);
+                else this.items.push({ id: product.id, name: product.nombre, price: product.precio_detal, qty: Number(qty), type });
+                this.save();
+            },
+            remove(index) {
+                this.items.splice(index, 1);
+                this.save();
+            },
+            total() {
+                return this.items.reduce((s, i) => s + (i.price * i.qty), 0).toFixed(2);
+            },
+            count() {
+                return this.items.reduce((s, i) => s + i.qty, 0);
+            },
+            save() { localStorage.setItem('sw_cart', JSON.stringify(this.items)); }
+        });
+    });
+</script>
+
+<header class="bg-white dark:bg-gray-800 shadow">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16 items-center">
+            <div class="flex items-center gap-4">
+                <a href="{{ route('home') }}" class="text-xl font-bold">SW</a>
+                <div x-data="{ query: '', results: [], open:false }" class="relative">
+                    <input x-model="query" @input.debounce.300ms="
+                        if(query.length>1) fetch('/api/catalog/search?q='+encodeURIComponent(query))
+                            .then(r=>r.json()).then(d=>{ results=d; open=true })
+                        else { results=[]; open=false }
+                    " type="search" placeholder="Search products..." class="border rounded px-3 py-2">
+                    <div x-show="open && results.length" class="absolute bg-white shadow mt-1 w-80 z-50">
+                        <template x-for="item in results" :key="item.id">
+                            <a :href="`/producto/${item.slug || item.id}`" class="block px-3 py-2 hover:bg-gray-100">
+                                <div class="flex items-center gap-2">
+                                    <div class="text-2xl">📱</div>
+                                    <div>
+                                        <div x-text="item.nombre"></div>
+                                        <div class="text-sm text-gray-500"><span x-text="item.category?.nombre || ''"></span> · $<span x-text="item.precio_detal"></span></div>
+                                    </div>
+                                </div>
+                            </a>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                @guest
+                    <a href="{{ route('login') }}" class="px-3 py-2">Ingresar</a>
+                    <a href="{{ route('register') }}" class="px-3 py-2">Crear cuenta</a>
+                @else
+                    <span>{{ auth()->user()->nombre ?? auth()->user()->name }}</span>
+                @endguest
+
+                <a href="{{ route('cart') }}" class="relative px-3 py-2">
+                    🛒
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full text-xs px-1" x-text="Alpine.store('cart').count()"></span>
+                </a>
+
+                <button @click="document.documentElement.classList.toggle('dark')" class="px-3 py-2">🌓</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        @yield('content')
+    </div>
+</main>
+
+<footer class="bg-white dark:bg-gray-800 border-t mt-8">
+    <div class="max-w-7xl mx-auto px-4 py-6 text-sm text-gray-600">
+        © {{ date('Y') }} Smartphone World — All rights reserved.
+    </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+﻿<?php
+
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\TiendaController;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\InventoryController as AdminInventoryController;
+use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\PaymentController as AdminPaymentController;
+use App\Http\Controllers\Admin\ClientController as AdminClientController;
+
+Route::get('/admin/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
+Route::post('/admin/login', [AdminAuthController::class, 'login'])->name('admin.login.submit');
+Route::post('/admin/logout', [AdminAuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('admin.logout');
+
+Route::middleware(['auth', 'active', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('products', [AdminProductController::class, 'index'])->name('productos.lista');
+        Route::get('inventory', [AdminInventoryController::class, 'index'])->name('inventario.lista');
+        Route::get('inventory/alerts', [AdminInventoryController::class, 'alerts'])->name('inventario.alertas');
+        Route::get('orders', [AdminOrderController::class, 'index'])->name('pedidos.lista');
+        Route::get('payments', [AdminPaymentController::class, 'index'])->name('pagos.lista');
+        Route::get('payments/{id}/receipt', [AdminPaymentController::class, 'receipt'])->name('pagos.receipt');
+        Route::get('clients', [AdminClientController::class, 'index'])->name('clientes.lista');
+    });
+
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::post('/product/import', [ProductController::class, 'import'])->name('product.import');
+Route::get('/product/import', [ProductController::class, 'import']);
+
+Route::resource('/product', ProductController::class);
+
+
+
+
+
+
+Route::get('/tienda', [TiendaController::class, 'index'])->name('tienda.index');
+Route::get('/tienda/products.json', [TiendaController::class, 'productsJson'])->name('tienda.products.json');
+Route::get('/tienda/product/{id}', [TiendaController::class, 'product'])->name('tienda.product');
+
+require __DIR__.'/auth.php';
+
+// --- Public storefront routes (web + lightweight API) ---
+use App\Http\Controllers\ControladorCatalogo;
+use App\Http\Controllers\ControladorPedidosWeb;
+use App\Http\Controllers\Api\ControladorCatalogo as ApiCatalogController;
+
+Route::get('/', [ControladorCatalogo::class, 'index'])->name('home');
+Route::get('/catalogo', [ControladorCatalogo::class, 'catalog'])->name('catalog');
+Route::get('/producto/{product:slug}', [ControladorCatalogo::class, 'show'])->name('product.show');
+
+Route::get('/login-cliente', function(){ return view('web.auth.login'); })->name('login.cliente');
+Route::get('/registro', function(){ return view('web.auth.register'); })->name('register.cliente');
+
+// Lightweight JSON endpoints for the frontend search and catalog
+Route::get('/api/catalog', [ApiCatalogController::class, 'index']);
+Route::get('/api/catalog/{id}', [ApiCatalogController::class, 'show']);
+Route::get('/api/catalog/search', [ApiCatalogController::class, 'search']);
+
+Route::middleware('auth')->group(function () {
+    Route::get('/carrito', function(){ return view('web.cart'); })->name('cart');
+    Route::get('/checkout', [ControladorPedidosWeb::class, 'checkout'])->name('checkout');
+    Route::post('/checkout', [ControladorPedidosWeb::class, 'store'])->name('checkout.store');
+    Route::get('/pedido/{number}/confirmado', [ControladorPedidosWeb::class, 'confirm'])->name('order.confirmed');
+});
+

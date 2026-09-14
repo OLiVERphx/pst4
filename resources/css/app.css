@@ -1,0 +1,17 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Variables */
+:root {
+  --sw-bg-dark: #0B0E17;
+  --sw-surface-dark: #131720;
+  --sw-border-dark: #2A3047;
+  --sw-bg-light: #F1F5F9;
+  --sw-surface-light: #FFFFFF;
+  --sw-border-light: #E2E8F0;
+  --sw-accent-blue: #1D4ED8;
+  --sw-accent-teal: #0D9488;
+  --sw-accent-green: #059669;
+  --sw-accent-orange: #EA580C;
+}

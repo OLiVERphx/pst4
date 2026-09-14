@@ -1,0 +1,102 @@
+﻿<?php
+
+namespace App\Services;
+
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class ServicioDashboard
+{
+    /**
+     * Retorna estadÃ­sticas necesarias para el dashboard.
+     * Comentarios en espaÃ±ol, cÃ³digo en inglÃ©s.
+     *
+     * @return array
+     */
+    public function obtenerEstadisticas(): array
+    {
+        $now = Carbon::now();
+        $startOfMonth = $now->copy()->startOfMonth();
+        $endOfMonth = $now->copy()->endOfMonth();
+
+        // Ventas entregadas en el mes
+        $total_ventas_mes = (float) DB::table('pedidos')
+            ->where('estado', 'entregado')
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->sum('total');
+
+        // Pedidos del mes
+        $pedidos_mes = DB::table('pedidos')
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->count();
+
+        // Total clientes (usuarios con rol 'cliente' si existe)
+        $clienteRoleId = DB::table('roles')->where('nombre', 'cliente')->value('id');
+        $total_clientes = $clienteRoleId
+            ? DB::table('users')->where('rol_id', $clienteRoleId)->count()
+            : DB::table('users')->count();
+
+        // Pedidos pendientes
+        $pedidos_pendientes = DB::table('pedidos')->where('estado', 'pendiente')->count();
+
+        // Pagos por verificar
+        $pagos_por_verificar = DB::table('pagos')->where('estado', 'pendiente')->count();
+
+        // Productos con stock bajo
+        $cantidad_stock_bajo = DB::table('products')->whereColumn('stock', '<=', 'stock_minimo')->count();
+
+        // Ventas por categorÃ­a (suma de items_pedido.subtotal para pedidos entregados en el mes)
+        $ventas_por_categoria = DB::table('items_pedido')
+            ->join('pedidos', 'items_pedido.pedido_id', '=', 'pedidos.id')
+            ->join('products', 'items_pedido.producto_id', '=', 'products.id')
+            ->join('categories', 'products.categoria_id', '=', 'categories.id')
+            ->where('pedidos.estado', 'entregado')
+            ->whereBetween('pedidos.created_at', [$startOfMonth, $endOfMonth])
+            ->select('categories.nombre as nombre_categoria', DB::raw('SUM(items_pedido.subtotal) as total'))
+            ->groupBy('categories.nombre')
+            ->orderByDesc('total')
+            ->get()
+            ->map(function ($row) {
+                return ['category' => $row->nombre_categoria, 'total' => (float) $row->total];
+            })
+            ->toArray();
+
+        // Ventas semanales de las Ãºltimas 8 semanas
+        $ventas_semanales = [];
+        for ($i = 7; $i >= 0; $i--) {
+            $startWeek = Carbon::now()->subWeeks($i)->startOfWeek();
+            $endWeek = Carbon::now()->subWeeks($i)->endOfWeek();
+
+            $totalWeek = (float) DB::table('pedidos')
+                ->where('estado', 'entregado')
+                ->whereBetween('created_at', [$startWeek, $endWeek])
+                ->sum('total');
+
+            $ventas_semanales[] = [
+                'week_start' => $startWeek->toDateString(),
+                'week_end' => $endWeek->toDateString(),
+                'total' => $totalWeek,
+            ];
+        }
+
+        // Ãšltimos 5 pedidos
+        $latest_orders = DB::table('pedidos')
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get(['id', 'numero_pedido', 'usuario_id', 'estado', 'total', 'created_at'])
+            ->toArray();
+
+        return [
+            'total_ventas_mes' => $total_ventas_mes,
+            'pedidos_mes' => $pedidos_mes,
+            'total_clientes' => $total_clientes,
+            'pedidos_pendientes' => $pedidos_pendientes,
+            'pagos_por_verificar' => $pagos_por_verificar,
+            'cantidad_stock_bajo' => $cantidad_stock_bajo,
+            'ventas_por_categoria' => $ventas_por_categoria,
+            'ventas_semanales' => $ventas_semanales,
+            'latest_orders' => $latest_orders,
+        ];
+    }
+}
+

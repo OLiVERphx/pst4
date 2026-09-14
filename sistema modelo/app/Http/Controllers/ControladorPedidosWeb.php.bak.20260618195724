@@ -1,0 +1,100 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Payment;
+use App\Models\Product;
+use App\Services\ServicioValidacionPagos;
+
+class ControladorPedidosWeb extends Controller
+{
+    // Mostrar formulario de checkout
+    public function checkout()
+    {
+        return view('web.checkout');
+    }
+
+    // Crear orden desde el carrito enviado en el request
+    public function store(Request $request)
+    {
+        $request->validate([
+            'entrega_nombre' => 'required|string',
+            'entrega_telefono' => 'required|string',
+            'entrega_direccion' => 'required|string',
+            'entrega_ciudad' => 'required|string',
+            'cart' => 'required',
+        ]);
+
+        $cart = json_decode($request->input('cart'), true);
+        if (!is_array($cart) || count($cart) === 0) {
+            return back()->withErrors(['cart' => 'Cart is empty']);
+        }
+
+        $subtotal = 0;
+        foreach ($cart as $item) {
+            $subtotal += ($item['price'] ?? $item['precio_detal'] ?? 0) * ($item['qty'] ?? 1);
+        }
+
+        $total = $subtotal; // descuentos no implementados
+
+        $order = Order::create([
+            'numero_pedido' => 'ORD-'.Str::upper(Str::random(8)),
+            'usuario_id' => Auth::id(),
+            'tipo' => 'retail',
+            'estado' => 'pending',
+            'subtotal' => $subtotal,
+            'descuento' => 0,
+            'total' => $total,
+            'entrega_nombre' => $request->entrega_nombre,
+            'entrega_telefono' => $request->entrega_telefono,
+            'entrega_direccion' => $request->entrega_direccion,
+            'entrega_ciudad' => $request->entrega_ciudad,
+        ]);
+
+        foreach ($cart as $item) {
+            $productId = $item['id'];
+            $qty = $item['qty'] ?? 1;
+            $price = $item['price'] ?? ($item['precio_detal'] ?? 0);
+            OrderItem::create([
+                'pedido_id' => $order->id,
+                'producto_id' => $productId,
+                'cantidad' => $qty,
+                'precio_unitario' => $price,
+                'subtotal' => $price * $qty,
+            ]);
+        }
+
+        // Si hay comprobante, validar y guardar
+        if ($request->hasFile('comprobante')) {
+            $file = $request->file('comprobante');
+            $svc = new ServicioValidacionPagos();
+            $checks = $svc->validarComprobante($file);
+
+            $payment = Payment::create([
+                'pedido_id' => $order->id,
+                'metodo' => $request->metodo ?? 'transferencia',
+                'monto' => $order->total,
+                'moneda' => $request->moneda ?? 'USD',
+                'estado' => 'pending',
+            ]);
+
+            $svc->store($payment, $file);
+        }
+
+        // Limpiar carrito del cliente (front-end localStorage)
+        // Redirigir a confirmación
+        return redirect()->route('order.confirmed', ['number' => $order->numero_pedido]);
+    }
+
+    public function confirm($number)
+    {
+        $order = Order::where('numero_pedido', $number)->firstOrFail();
+        return view('web.order-confirmed', compact('order'));
+    }
+}
