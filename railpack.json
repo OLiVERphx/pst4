@@ -1,6 +1,0 @@
-{
-  "packages": {
-    "php": "8.2"
-  },
-  "phpExtensions": ["zip"]
-}
