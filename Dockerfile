@@ -12,7 +12,9 @@ COPY . .
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-RUN composer install --optimize-autoloader --no-dev --no-interaction
+RUN composer install --optimize-autoloader --no-dev --no-interaction --no-scripts
+
+RUN php artisan package:discover --ansi || true
 
 EXPOSE 8000
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
