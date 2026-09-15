@@ -191,6 +191,70 @@ input, select, textarea { font-family: inherit; }
 .section.active { display: block; }
 
 /* ═══════════════════════════════════════════
+   PRODUCT GRID
+═══════════════════════════════════════════ */
+.products-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.2rem;
+}
+.products-title { font-size: 1.1rem; font-weight: 700; }
+.products-count { font-size: .85rem; color: var(--c-muted); }
+.filter-row {
+  display: flex; gap: .6rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+}
+.filter-select {
+  padding: .45rem .9rem; border-radius: 8px;
+  background: var(--c-surface2); border: 1px solid var(--c-border);
+  color: var(--c-text); font-size: .85rem; cursor: pointer; outline: none;
+}
+.filter-select:focus { border-color: var(--c-blue); }
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1.2rem;
+}
+.product-card {
+  background: var(--c-card); border: 1px solid var(--c-border);
+  border-radius: 14px; overflow: hidden;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+  cursor: pointer;
+}
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px var(--c-shadow);
+  border-color: var(--c-blue);
+}
+.product-card-img {
+  height: 170px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 4rem; position: relative;
+  background: linear-gradient(135deg, var(--c-surface2) 0%, var(--c-bg) 100%);
+}
+.product-badge {
+  position: absolute; top: .6rem; left: .6rem;
+  padding: .2rem .6rem; border-radius: 6px;
+  font-size: .7rem; font-weight: 700; letter-spacing: .04em;
+}
+.badge-new { background: var(--c-teal); color: white; }
+.badge-low { background: var(--c-orange); color: white; }
+.badge-sale { background: var(--c-accent); color: white; }
+.product-card-body { padding: 1rem; }
+.product-name { font-size: .92rem; font-weight: 700; margin-bottom: .25rem; color: var(--c-text); }
+.product-brand { font-size: .78rem; color: var(--c-muted); margin-bottom: .6rem; }
+.product-bottom {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+}
+.product-price { font-size: 1.1rem; font-weight: 900; color: var(--c-teal); }
+.product-add-btn {
+  width: 34px; height: 34px; border-radius: 8px; border: none;
+  background: var(--c-blue); color: white; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition); flex-shrink: 0;
+}
+.product-add-btn:hover { background: var(--c-blue-h); transform: scale(1.1); }
+.product-add-btn.added { background: var(--c-green); }
+
+/* ═══════════════════════════════════════════
    HERO
 ══════════════════════════════════════════ */
 .hero {
