@@ -2,7 +2,7 @@
 
 @section('content')
 
-<div x-data="catalogoApp(@json($productosJson))" class="section active">
+<div x-data='catalogoApp(@json($productosJson))' class="section active">
 
   <!-- BREADCRUMB -->
   <div class="breadcrumb">
