@@ -19,6 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => \App\Http\Middleware\MiddlewareUsuarioActivo::class,
         ]);
 
+        $middleware->redirectGuestsTo(function (Request $request) {
+            session()->flash('error', 'Debes iniciar sesión para continuar. Si no tienes cuenta, puedes crear una en segundos.');
+            return route('web.login');
+        });
+
         $middleware->trustProxies(at: '*', headers: Request::HEADER_X_FORWARDED_FOR |
             Request::HEADER_X_FORWARDED_HOST |
             Request::HEADER_X_FORWARDED_PORT |
