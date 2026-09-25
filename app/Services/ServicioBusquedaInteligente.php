@@ -168,6 +168,7 @@ class ServicioBusquedaInteligente
         }
 
         arsort($scores);
+        $scores = array_filter($scores, fn($s) => $s > 0);
         $ids = array_keys(array_slice($scores, 0, $limit, true));
 
         return $ids;

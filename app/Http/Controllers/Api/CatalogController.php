@@ -187,6 +187,7 @@ class CatalogController extends Controller
                     'precio_detal'=> (float) $p->precio_detal,
                     'emoji'       => $emojis[$p->category?->nombre] ?? '📦',
                 ]);
+        }
 
         // Registrar búsqueda en la tabla registros_busqueda
         try {
