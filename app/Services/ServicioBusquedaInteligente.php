@@ -142,6 +142,14 @@ class ServicioBusquedaInteligente
             $index = $this->buildIndex();
         }
 
+        // Corrección por errores de tipeo: si un término no está en el vocabulario,
+        // se sustituye por el más parecido (distancia de Levenshtein <= 2).
+        $vocabulario = array_keys($index['idf']);
+        $q = array_map(function ($token) use ($index, $vocabulario) {
+            if (isset($index['idf'][$token])) return $token;
+            return $this->closestTerm($token, $vocabulario) ?? $token;
+        }, $q);
+
         // TF para query
         $freqs = array_count_values($q);
         $maxFreq = max($freqs);
@@ -270,5 +278,25 @@ class ServicioBusquedaInteligente
         $tokens = preg_split('/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
         $tokens = array_filter($tokens, fn($t) => strlen($t) > 1 && !in_array($t, $this->stopwords));
         return array_values($tokens);
+    }
+
+    /**
+     * Busca el término del vocabulario más parecido a un token dado usando distancia
+     * de Levenshtein, para tolerar errores de tipeo (ej. "cavle" -> "cable").
+     * Devuelve null si ningún término está suficientemente cerca.
+     */
+    protected function closestTerm(string $token, array $vocabulario, int $maxDistancia = 2): ?string
+    {
+        $mejor = null;
+        $mejorDistancia = $maxDistancia + 1;
+        foreach ($vocabulario as $termino) {
+            if (abs(strlen($termino) - strlen($token)) > $maxDistancia) continue;
+            $d = levenshtein($token, $termino);
+            if ($d < $mejorDistancia) {
+                $mejorDistancia = $d;
+                $mejor = $termino;
+            }
+        }
+        return $mejorDistancia <= $maxDistancia ? $mejor : null;
     }
 }
