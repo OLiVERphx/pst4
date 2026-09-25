@@ -630,11 +630,12 @@ input, select, textarea { font-family: inherit; }
   </a>
 
   <div class="navbar-search" x-data="searchApp()">
-    <span class="search-icon">🔍</span>
+    <button type="button" class="search-icon" @click="irABusqueda()" style="background:none;border:none;cursor:pointer;">🔍</button>
     <input
       type="text"
       placeholder="Buscar productos, marcas, categorías…"
       x-model="query"
+      @keyup.enter="irABusqueda()"
       @input.debounce.250ms="buscar()"
       @focus="mostrar = query.length >= 2"
       @click.outside="mostrar = false"
@@ -819,6 +820,10 @@ function searchApp() {
         this.sugerencias = await r.json();
         this.mostrar = this.sugerencias.length > 0;
       } catch(e) { this.sugerencias = []; }
+    },
+    irABusqueda() {
+      if (this.query.trim().length < 2) return;
+      window.location.href = '/catalogo?buscar=' + encodeURIComponent(this.query.trim());
     }
   }
 }

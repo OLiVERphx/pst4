@@ -57,6 +57,30 @@ class CatalogController extends Controller
         if ($request->marca) {
             $query->whereHas('brand', fn($b) => $b->where('nombre', $request->marca));
         }
+
+        if ($request->buscar) {
+            $term = $request->buscar;
+            try {
+                $svc = new \App\Services\ServicioBusquedaInteligente();
+                $ids = $svc->search($term, 500);
+                if (!empty($ids)) {
+                    $query->whereIn('id', $ids);
+                } else {
+                    $query->where(fn($w) =>
+                        $w->where('nombre', 'like', "%{$term}%")
+                          ->orWhere('codigo', 'like', "%{$term}%")
+                          ->orWhereHas('brand', fn($b) => $b->where('nombre', 'like', "%{$term}%"))
+                    );
+                }
+            } catch (\Exception $e) {
+                $query->where(fn($w) =>
+                    $w->where('nombre', 'like', "%{$term}%")
+                      ->orWhere('codigo', 'like', "%{$term}%")
+                      ->orWhereHas('brand', fn($b) => $b->where('nombre', 'like', "%{$term}%"))
+                );
+            }
+        }
+
         $orden = $request->get('orden', 'default');
         match($orden) {
             'precio-asc'  => $query->orderBy('precio_detal','asc'),
