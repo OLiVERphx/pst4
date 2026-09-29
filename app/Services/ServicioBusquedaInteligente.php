@@ -268,11 +268,28 @@ class ServicioBusquedaInteligente
     }
 
     /**
+     * Normaliza acentos y ñ a su equivalente ASCII (á->a, ñ->n, etc.) para que
+     * el índice y las búsquedas sean insensibles a tildes, y para que levenshtein()
+     * (que en PHP mide distancia en bytes, no en caracteres UTF-8) funcione correctamente.
+     * Se usa strtr con un mapa explícito para evitar artefactos diacríticos en Windows (iconv).
+     */
+    protected function normalizar(string $texto): string
+    {
+        $map = [
+            'á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u',
+            'Á'=>'a','É'=>'e','Í'=>'i','Ó'=>'o','Ú'=>'u',
+            'ñ'=>'n','Ñ'=>'n','ü'=>'u','Ü'=>'u',
+        ];
+        return strtr($texto, $map);
+    }
+
+    /**
      * Tokeniza y normaliza texto: minúsculas, quita puntuación, quita stopwords.
      */
     protected function tokenize(string $text): array
     {
         $text = mb_strtolower($text);
+        $text = $this->normalizar($text);
         // Reemplazar caracteres especiales por espacio
         $text = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $text);
         $tokens = preg_split('/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY) ?: [];
