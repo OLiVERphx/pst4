@@ -5,15 +5,11 @@
         <input wire:model.live="search" type="text" placeholder="Buscar pedidos" class="bg-[#1C2130] border border-[#2A3047] rounded-lg px-3 py-1.5 text-sm w-56 pl-10 text-[#F1F5F9] placeholder-[#94A3B8] focus:border-[#1D4ED8]" />
     </div>
 
-    <select wire:model="statusFilter" class="bg-[#1C2130] border border-[#2A3047] rounded-lg px-3 py-1.5 text-sm text-[#F1F5F9]">
+    <select wire:model.live="statusFilter" class="bg-[#1C2130] border border-[#2A3047] rounded-lg px-3 py-1.5 text-sm text-[#F1F5F9]">
         <option value="">Todos los estados</option>
-        <option value="pendiente">Pendiente</option>
-        <option value="pago_subido">Pago subido</option>
-        <option value="pago_verificado">Pago verificado</option>
-        <option value="procesando">Procesando</option>
-        <option value="enviado">Enviado</option>
-        <option value="entregado">Entregado</option>
-        <option value="cancelado">Cancelado</option>
+        @foreach(app(\App\Services\ServicioPedidos::class)->obtenerFlujoEstados() as $key => $label)
+            <option value="{{ $key }}">{{ $label }}</option>
+        @endforeach
     </select>
 </div>
 
@@ -35,11 +31,11 @@
                     @php
                         $st = $order->estado;
                         $badgeClass = 'bg-[#94A3B8]/10 text-[#94A3B8] px-2 py-1 rounded-full text-xs font-semibold';
-                        if(in_array($st, ['pendiente','pago_subido'])) $badgeClass = 'bg-[#EA580C]/10 text-[#EA580C] px-2 py-1 rounded-full text-xs font-semibold';
-                        elseif(in_array($st, ['pago_verificado','entregado','activo'])) $badgeClass = 'bg-[#059669]/10 text-[#059669] px-2 py-1 rounded-full text-xs font-semibold';
+                        if(in_array($st, ['pendiente','pago_subido','pago_a_confirmar'])) $badgeClass = 'bg-[#EA580C]/10 text-[#EA580C] px-2 py-1 rounded-full text-xs font-semibold';
+                        elseif(in_array($st, ['pago_verificado','entregado','completado','activo'])) $badgeClass = 'bg-[#059669]/10 text-[#059669] px-2 py-1 rounded-full text-xs font-semibold';
                         elseif(in_array($st, ['cancelado','inactivo'])) $badgeClass = 'bg-red-500/10 text-red-400 px-2 py-1 rounded-full text-xs font-semibold';
-                        elseif($st === 'procesando') $badgeClass = 'bg-[#7C3AED]/10 text-[#7C3AED] px-2 py-1 rounded-full text-xs font-semibold';
-                        elseif(in_array($st, ['enviado','en_transito','en_transición'])) $badgeClass = 'bg-[#1D4ED8]/10 text-[#1D4ED8] px-2 py-1 rounded-full text-xs font-semibold';
+                        elseif(in_array($st, ['procesando','listo_para_retirar'])) $badgeClass = 'bg-[#7C3AED]/10 text-[#7C3AED] px-2 py-1 rounded-full text-xs font-semibold';
+                        elseif(in_array($st, ['enviado','en_camino','pago_confirmado','pago_confirmado_retirar','en_transito','en_transición'])) $badgeClass = 'bg-[#1D4ED8]/10 text-[#1D4ED8] px-2 py-1 rounded-full text-xs font-semibold';
                     @endphp
                     <tr class="hover:bg-[#1C2130]">
                         <td class="px-4 py-2 text-sm text-[#F1F5F9]">{{ $order->numero_pedido }}</td>
@@ -66,23 +62,32 @@
         <div class="bg-[#2B3346] rounded p-4 w-1/3 h-full overflow-auto border border-[#384457] shadow-xl">
             @if($selectedOrder)
                 <h3 class="font-semibold mb-2 text-[#F1F5F9]">Pedido {{ $selectedOrder->numero_pedido }}</h3>
-                <div class="mb-3 text-[#F1F5F9]">
-                    <div>Cliente: {{ $selectedOrder->user?->name }}</div>
-                    <div>Total: {{ number_format($selectedOrder->total, 2) }}</div>
-                <div>Estado: {{ \App\Helpers\LabelHelper::translateStatus($selectedOrder->estado) }}</div>
+                <div class="mb-3 text-[#F1F5F9] text-sm space-y-1">
+                    <div><span class="text-[#94A3B8]">Cliente:</span> {{ $selectedOrder->user?->name ?? 'Invitado' }}</div>
+                    <div><span class="text-[#94A3B8]">Tipo de entrega:</span> {{ ucfirst($selectedOrder->tipo_entrega ?? 'retiro') }}</div>
+                    <div><span class="text-[#94A3B8]">Método de pago:</span> {{ ucfirst($selectedOrder->payment?->metodo ?? 'fisico') }}</div>
+                    <div><span class="text-[#94A3B8]">Total:</span> ${{ number_format($selectedOrder->total, 2) }}</div>
+                    <div><span class="text-[#94A3B8]">Estado:</span> <span class="font-semibold">{{ \App\Helpers\LabelHelper::translateStatus($selectedOrder->estado) }}</span></div>
                 </div>
 
                 <h4 class="font-semibold mb-1 text-[#F1F5F9]">Items</h4>
                 <ul class="mb-3 text-[#F1F5F9]">
                     @foreach($selectedOrder->items as $it)
-                        <li class="text-sm">{{ $it->product?->nombre ?? 'Producto eliminado' }} x{{ $it->cantidad }} - {{ number_format($it->precio_unitario, 2) }}</li>
+                        <li class="text-sm">{{ $it->product?->nombre ?? 'Producto eliminado' }} x{{ $it->cantidad }} - ${{ number_format($it->precio_unitario, 2) }}</li>
                     @endforeach
                 </ul>
 
-                <div class="flex gap-2">
-                    <button wire:click.prevent="advance($selectedOrder)" class="bg-[#1D4ED8] text-white px-3 py-2 rounded">Avanzar estado</button>
-                    <button wire:click.prevent="cancel($selectedOrder, 'Cancelado desde admin')" class="bg-red-600 text-white px-3 py-2 rounded">Cancelar</button>
-                    <button wire:click.prevent="$set('showDetail', false)" class="bg-[#2A3047] text-white px-3 py-2 rounded">Cerrar</button>
+                <div class="flex flex-wrap gap-2">
+                    @php
+                        $siguienteLabel = $this->proximoEstadoLabel($selectedOrder);
+                    @endphp
+                    @if($siguienteLabel)
+                        <button wire:click.prevent="advance({{ $selectedOrder->id }})" class="bg-[#1D4ED8] text-white px-3 py-2 rounded text-sm hover:bg-[#1e40af] transition font-medium">
+                            Avanzar a: {{ $siguienteLabel }}
+                        </button>
+                    @endif
+                    <button wire:click.prevent="cancel({{ $selectedOrder->id }}, 'Cancelado desde admin')" class="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 transition">Cancelar</button>
+                    <button wire:click.prevent="$set('showDetail', false)" class="bg-[#2A3047] text-white px-3 py-2 rounded text-sm hover:bg-[#384457] transition">Cerrar</button>
                 </div>
             @endif
         </div>

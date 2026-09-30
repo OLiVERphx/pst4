@@ -161,6 +161,25 @@ class ServicioPedidos
     }
 
     /**
+     * Determina el flujo de estados aplicable a un pedido según su tipo de entrega
+     * y el método de pago real registrado en su Payment.
+     */
+    public function obtenerFlujoParaPedido(Order $order): array
+    {
+        $metodo = $order->payment?->metodo ?? 'fisico';
+
+        if ($order->tipo_entrega === 'delivery') {
+            return ['pendiente', 'pago_subido', 'pago_a_confirmar', 'pago_confirmado', 'en_camino', 'entregado'];
+        }
+
+        if ($metodo === 'fisico') {
+            return ['pendiente', 'listo_para_retirar', 'completado'];
+        }
+
+        return ['pendiente', 'pago_subido', 'pago_a_confirmar', 'pago_confirmado_retirar', 'completado'];
+    }
+
+    /**
      * Avanza el estado del pedido según el flujo definido.
      *
      * @param Order $order
@@ -169,7 +188,7 @@ class ServicioPedidos
      */
     public function avanzarEstado(Order $order, User $admin): Order
     {
-        $flow = ['pendiente', 'pago_subido', 'pago_verificado', 'procesando', 'enviado', 'entregado'];
+        $flow = $this->obtenerFlujoParaPedido($order);
         $current = $order->estado;
         $pos = array_search($current, $flow, true);
 
@@ -282,12 +301,19 @@ class ServicioPedidos
     {
         return [
             'pendiente' => 'Pendiente',
+            'listo_para_retirar' => 'Listo para retirar',
             'pago_subido' => 'Pago subido',
+            'pago_a_confirmar' => 'Pago a confirmar',
+            'pago_confirmado_retirar' => 'Pago confirmado — puede retirar',
+            'pago_confirmado' => 'Pago confirmado',
+            'en_camino' => 'En camino',
+            'entregado' => 'Entregado',
+            'completado' => 'Completado',
+            'cancelado' => 'Cancelado',
+            // Estados heredados de pedidos anteriores a esta ronda de cambios:
             'pago_verificado' => 'Pago verificado',
             'procesando' => 'Procesando',
             'enviado' => 'Enviado',
-            'entregado' => 'Entregado',
-            'cancelado' => 'Cancelado',
         ];
     }
 }

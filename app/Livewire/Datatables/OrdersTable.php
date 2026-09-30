@@ -59,15 +59,34 @@ class OrdersTable extends Component
         $this->showDetail = true;
     }
 
+    public function proximoEstadoLabel(Order $order, ?ServicioPedidos $service = null): ?string
+    {
+        $service = $service ?? app(ServicioPedidos::class);
+        $flow = $service->obtenerFlujoParaPedido($order);
+        $pos = array_search($order->estado, $flow, true);
+        if ($pos === false || $pos >= count($flow) - 1) {
+            return null;
+        }
+        $next = $flow[$pos + 1];
+        $estados = $service->obtenerFlujoEstados();
+        return $estados[$next] ?? ucfirst(str_replace('_', ' ', $next));
+    }
+
     public function advance(Order $order, ServicioPedidos $service)
     {
-        $service->avanzarEstado($order, Auth::user());
+        $updated = $service->avanzarEstado($order, Auth::user());
+        if ($this->selectedOrder && $this->selectedOrder->id === $order->id) {
+            $this->selectedOrder = $updated->load('items.product', 'user', 'payment');
+        }
         $this->dispatch('order-updated');
     }
 
     public function cancel(Order $order, $reason, ServicioPedidos $service)
     {
-        $service->cancel($order, Auth::user(), $reason);
+        $updated = $service->cancel($order, Auth::user(), $reason);
+        if ($this->selectedOrder && $this->selectedOrder->id === $order->id) {
+            $this->selectedOrder = $updated->load('items.product', 'user', 'payment');
+        }
         $this->dispatch('order-updated');
     }
 }

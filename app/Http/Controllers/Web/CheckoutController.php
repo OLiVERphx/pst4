@@ -170,6 +170,18 @@ class CheckoutController extends Controller
                 }
             }
 
+            // Efectivo + retiro en tienda: no hay pago online que confirmar, el pedido queda listo de inmediato.
+            if ($order->tipo_entrega === 'retiro' && $request->metodo_pago === 'fisico') {
+                $order->update(['estado' => 'listo_para_retirar']);
+                \App\Services\ServicioAuditoria::registrar(
+                    'pedido.estado_cambiado',
+                    $order,
+                    ['estado' => 'pendiente'],
+                    ['estado' => 'listo_para_retirar'],
+                    auth()->id()
+                );
+            }
+
             return redirect()->route('web.order.confirmed', $order->numero_pedido);
         } catch (\Exception $e) {
             return back()->withErrors(['stock' => $e->getMessage()]);
