@@ -131,18 +131,21 @@ class ServicioPedidos
                 );
             }
 
-            // Crear registro de pago pendiente si es necesario (pago físico queda pendiente)
-            Payment::create([
-                'pedido_id' => $order->id,
-                'metodo' => 'fisico',
-                'monto' => $subtotal,
-                'monto_declarado' => null,
-                'moneda_declarada' => null,
-                'fecha_pago_declarada' => null,
-                'moneda' => config('pagos.default_moneda','VEF'),
-                'numero_referencia' => null,
-                'estado' => 'pendiente',
-            ]);
+            // Crear registro de pago pendiente solo para ventas locales (pago en efectivo en caja).
+            // Las ventas online crean su propio Payment en el CheckoutController con el método real.
+            if ($canal === 'local') {
+                Payment::create([
+                    'pedido_id' => $order->id,
+                    'metodo' => 'fisico',
+                    'monto' => $subtotal,
+                    'monto_declarado' => null,
+                    'moneda_declarada' => null,
+                    'fecha_pago_declarada' => null,
+                    'moneda' => config('pagos.default_moneda','VEF'),
+                    'numero_referencia' => null,
+                    'estado' => 'pendiente',
+                ]);
+            }
 
             // Registrar en la bitácora de auditoría que se creó el pedido local
             ServicioAuditoria::registrar(

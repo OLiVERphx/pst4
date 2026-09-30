@@ -149,27 +149,24 @@ class CheckoutController extends Controller
             $cart->estado = 'checked_out';
             $cart->save();
 
-            // Registrar pago si aplica (fuera de la transacción)
-            if ($request->metodo_pago !== 'fisico') {
-                $pago = Payment::create([
-                    'pedido_id'        => $order->id,
-                    'metodo'           => $request->metodo_pago,
-                    'monto'            => $order->subtotal,
-                    'monto_declarado'  => $request->monto_pagado ?? null,
-                    'moneda_declarada' => $request->moneda_pagada ?? null,
-                    'fecha_pago_declarada' => $request->fecha_pago ? \Carbon\Carbon::createFromFormat(config('pagos.fecha_format','Y-m-d'), $request->fecha_pago) : null,
-                    'moneda'           => 'USD',
-                    'numero_referencia'=> $request->numero_referencia,
-                    'estado'           => 'pendiente',
-                ]);
+            $pago = Payment::create([
+                'pedido_id'        => $order->id,
+                'metodo'           => $request->metodo_pago,
+                'monto'            => $order->subtotal,
+                'monto_declarado'  => $request->monto_pagado ?? null,
+                'moneda_declarada' => $request->moneda_pagada ?? null,
+                'fecha_pago_declarada' => $request->fecha_pago ? \Carbon\Carbon::createFromFormat(config('pagos.fecha_format','Y-m-d'), $request->fecha_pago) : null,
+                'moneda'           => 'USD',
+                'numero_referencia'=> $request->numero_referencia,
+                'estado'           => 'pendiente',
+            ]);
 
-                if ($request->hasFile('comprobante')) {
-                    try {
-                        app(ServicioValidacionPagos::class)->store($pago, $request->file('comprobante'));
-                        $order->update(['estado' => 'pago_subido']);
-                    } catch (\Throwable $e) {
-                        logger()->error('Pago comprobante store failed: ' . $e->getMessage());
-                    }
+            if ($request->hasFile('comprobante')) {
+                try {
+                    app(ServicioValidacionPagos::class)->store($pago, $request->file('comprobante'));
+                    $order->update(['estado' => 'pago_subido']);
+                } catch (\Throwable $e) {
+                    logger()->error('Pago comprobante store failed: ' . $e->getMessage());
                 }
             }
 
