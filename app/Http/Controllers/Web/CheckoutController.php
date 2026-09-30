@@ -8,6 +8,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Payment;
+use App\Models\Cart;
+use App\Models\CartItem;
 use App\Services\ServicioInventario;
 use App\Services\ServicioValidacionPagos;
 use Illuminate\Support\Str;
@@ -17,7 +19,51 @@ class CheckoutController extends Controller
     // Mostrar la vista de checkout; el carrito se gestiona en el cliente
     public function index()
     {
-        return view('web.checkout');
+        $user = auth()->user();
+        return view('web.checkout', compact('user'));
+    }
+
+    /**
+     * Obtiene el carrito activo del usuario en BD, o lo sincroniza/crea si viene del cliente.
+     * Siempre recalcula precios y disponibilidad contra la base de datos (Regla #1).
+     */
+    protected function getOrCreateUserCart(Request $request): ?Cart
+    {
+        $userId = auth()->id();
+        $cart = Cart::where('usuario_id', $userId)->where('estado', 'active')->with('items')->first();
+
+        // Si el carrito en BD no existe o está vacío, pero el cliente envía items (desde localStorage)
+        $rawItems = $request->input('items');
+        if (is_string($rawItems)) {
+            $rawItems = json_decode($rawItems, true);
+        }
+
+        if ((!$cart || $cart->items->isEmpty()) && !empty($rawItems) && is_array($rawItems)) {
+            if (!$cart) {
+                $cart = Cart::create(['usuario_id' => $userId, 'estado' => 'active']);
+            }
+
+            foreach ($rawItems as $i) {
+                $productId = $i['id'] ?? $i['producto_id'] ?? null;
+                $cantidad = max(1, (int)($i['cantidad'] ?? 1));
+                $tipo = ($i['tipo'] ?? 'detal') === 'mayor' ? 'mayor' : 'detal';
+
+                // Recalcular siempre contra la base de datos en el servidor
+                $product = Product::where('id', $productId)->where('activo', true)->first();
+                if ($product && $cantidad > 0) {
+                    $precioUnitario = $tipo === 'mayor' ? $product->precio_mayor : $product->precio_detal;
+                    $cart->items()->create([
+                        'producto_id'     => $product->id,
+                        'cantidad'        => $cantidad,
+                        'tipo'            => $tipo,
+                        'precio_unitario' => $precioUnitario,
+                    ]);
+                }
+            }
+            $cart->load('items');
+        }
+
+        return $cart;
     }
 
     /**
@@ -26,9 +72,9 @@ class CheckoutController extends Controller
      */
     public function reserve(Request $request)
     {
-        $cart = \App\Models\Cart::where('usuario_id', auth()->id())->where('estado','active')->with('items')->first();
+        $cart = $this->getOrCreateUserCart($request);
         if (!$cart || $cart->items->isEmpty()) {
-            return response()->json(['ok' => false, 'message' => 'Carrito vacío'], 400);
+            return response()->json(['ok' => false, 'message' => 'El carrito está vacío'], 400);
         }
 
         $service = app(\App\Services\ReservationService::class);
@@ -46,28 +92,33 @@ class CheckoutController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'tipo_entrega'      => 'required|in:retiro,delivery',
             'entrega_nombre'    => 'required|string|max:100',
             'entrega_apellido'  => 'required|string|max:100',
             'entrega_telefono'  => 'required|string|max:20',
-            'entrega_direccion' => 'required|string',
-            'entrega_ciudad'    => 'required|string|max:80',
+            'entrega_direccion' => 'required_if:tipo_entrega,delivery|nullable|string',
+            'entrega_ciudad'    => 'required_if:tipo_entrega,delivery|nullable|string|max:80',
             'metodo_pago'       => 'required|in:transferencia,pagomovil,binance,fisico',
             'comprobante'       => 'nullable|file|mimes:jpeg,jpg,png,pdf|max:5120',
             'numero_referencia' => 'nullable|string|max:100',
-            // Campos declarados por el cliente para verificación automática
             'fecha_pago'        => 'nullable|date_format:'.config('pagos.fecha_format','Y-m-d'),
             'monto_pagado'      => 'nullable|numeric|min:0',
             'moneda_pagada'     => 'nullable|string|max:5',
         ]);
 
+        // Regla de negocio: no se permite pago en efectivo con entrega a domicilio
+        // (no hay forma de confirmar el pago antes de despachar el pedido).
+        if ($request->tipo_entrega === 'delivery' && $request->metodo_pago === 'fisico') {
+            return back()->withErrors(['metodo_pago' => 'El pago en efectivo no está disponible para pedidos con delivery. Elegí retiro en tienda o un método de pago en línea.']);
+        }
+
         // Regla de negocio: si el cliente está marcado como bloqueado, no puede completar checkout.
-        // Esto permite que aún navegue el catálogo, pero evita la creación del pedido.
         if (auth()->check() && optional(auth()->user())->bloqueado) {
             return back()->withErrors(['blocked' => 'Su cuenta está bloqueada. Contacte a soporte para completar el pago.']);
         }
 
-        // Recuperar carrito persistente del usuario (la ruta /checkout está protegida por auth)
-        $cart = \App\Models\Cart::where('usuario_id', auth()->id())->where('estado','active')->with('items')->first();
+        // Recuperar o sincronizar carrito persistente del usuario
+        $cart = $this->getOrCreateUserCart($request);
         if (!$cart || $cart->items->isEmpty()) {
             return back()->withErrors(['items' => 'El carrito está vacío.']);
         }
@@ -78,7 +129,7 @@ class CheckoutController extends Controller
         try {
             $lineas = [];
             foreach ($cart->items as $item) {
-                $producto = \App\Models\Product::where('id', $item->producto_id)->first();
+                $producto = Product::where('id', $item->producto_id)->first();
                 $precio = $item->tipo === 'mayor' ? $producto->precio_mayor : $producto->precio_detal;
                 $lineas[] = ['producto_id' => $item->producto_id, 'cantidad' => $item->cantidad, 'precio' => $precio, 'tipo' => $item->tipo];
             }
@@ -87,6 +138,7 @@ class CheckoutController extends Controller
 
             // Crear pedido reusando la lógica centralizada (el servicio hace la transacción y locks)
             $order = $servicioPedidos->crearPedidoDesdeLineas($lineas, auth()->id(), auth()->id(), 'online', $request->notas ?? null, [
+                'tipo_entrega' => $request->tipo_entrega,
                 'entrega_nombre' => $request->entrega_nombre . ' ' . $request->entrega_apellido,
                 'entrega_telefono' => $request->entrega_telefono,
                 'entrega_direccion' => $request->entrega_direccion,
@@ -121,12 +173,10 @@ class CheckoutController extends Controller
                 }
             }
 
-            \Illuminate\Support\Facades\Redirect::setIntendedUrl(route('web.order.confirmed', $order->numero_pedido));
+            return redirect()->route('web.order.confirmed', $order->numero_pedido);
         } catch (\Exception $e) {
             return back()->withErrors(['stock' => $e->getMessage()]);
         }
-
-        return redirect()->route('web.order.confirmed', session()->pull('redirect_intended') ?? '\\');
     }
 
     public function confirmed(string $numero)

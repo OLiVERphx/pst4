@@ -34,12 +34,14 @@ class ConcurrentPurchaseTest extends TestCase
 
         // Primer usuario intenta comprar
         $resp1 = $this->actingAs($u1)->post(route('web.checkout.store'), [
+            'tipo_entrega' => 'retiro',
             'entrega_nombre' => 'A', 'entrega_apellido' => 'B', 'entrega_telefono' => '04141234567',
             'entrega_direccion' => 'C', 'entrega_ciudad' => 'D', 'metodo_pago' => 'fisico'
         ]);
 
         // Segundo usuario intenta comprar
         $resp2 = $this->actingAs($u2)->post(route('web.checkout.store'), [
+            'tipo_entrega' => 'retiro',
             'entrega_nombre' => 'X', 'entrega_apellido' => 'Y', 'entrega_telefono' => '04149876543',
             'entrega_direccion' => 'Z', 'entrega_ciudad' => 'Q', 'metodo_pago' => 'fisico'
         ]);

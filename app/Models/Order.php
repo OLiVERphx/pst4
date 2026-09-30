@@ -32,6 +32,8 @@ class Order extends Model
         'entrega_ciudad',
         'entrega_notas',
         'canal',
+        'tipo_entrega',
+        'fecha_estimada_entrega',
     ];
 
     protected $casts = [

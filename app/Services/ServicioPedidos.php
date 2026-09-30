@@ -87,6 +87,7 @@ class ServicioPedidos
                 'subtotal'      => $subtotal,
                 'descuento'     => 0,
                 'total'         => $subtotal,
+                'tipo_entrega'  => $datosEntrega['tipo_entrega'] ?? 'retiro',
                 'entrega_nombre' => $datosEntrega['entrega_nombre'] ?? null,
                 'entrega_telefono' => $datosEntrega['entrega_telefono'] ?? null,
                 'entrega_direccion' => $datosEntrega['entrega_direccion'] ?? null,

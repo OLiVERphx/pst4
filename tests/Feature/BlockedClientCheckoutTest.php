@@ -30,6 +30,7 @@ class BlockedClientCheckoutTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)->post(route('web.checkout.store'), [
+            'tipo_entrega' => 'retiro',
             'entrega_nombre' => 'Juan',
             'entrega_apellido' => 'Perez',
             'entrega_telefono' => '04141234567',
