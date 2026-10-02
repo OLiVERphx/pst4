@@ -3,11 +3,20 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Services\ServicioPedidos;
 
 class AccountController extends Controller
 {
-    public function index()
+    public function index(ServicioPedidos $service)
     {
-        return response('todo ok');
+        $pedidos = auth()->user()
+            ->orders()
+            ->with(['items.product', 'payment'])
+            ->orderByDesc('created_at')
+            ->paginate(10);
+
+        $estados = $service->obtenerFlujoEstados();
+
+        return view('web.mi-cuenta', compact('pedidos', 'estados'));
     }
 }
