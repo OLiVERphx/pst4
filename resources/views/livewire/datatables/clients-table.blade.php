@@ -1,39 +1,39 @@
 <div>
-    <div class="p-3 border-b border-[#2A3047] flex items-center gap-2">
+    <div class="p-3 border-b border-[#475569] flex items-center gap-2">
         <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]">🔍</span>
-            <input wire:model.live="search" type="text" placeholder="Buscar clientes" class="bg-[#1C2130] border border-[#2A3047] rounded-lg px-3 py-1.5 text-sm w-56 pl-10 text-[#F1F5F9] placeholder-[#94A3B8] focus:border-[#1D4ED8]" />
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AEC0]">🔍</span>
+            <input wire:model.live="search" type="text" placeholder="Buscar clientes" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm w-56 pl-10 text-[#F1F5F9] placeholder-[#A0AEC0] focus:border-[#1D4ED8]" />
         </div>
 
-        <select wire:model="statusFilter" class="bg-[#1C2130] border border-[#2A3047] rounded-lg px-3 py-1.5 text-sm text-[#F1F5F9]">
+        <select wire:model="statusFilter" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm text-[#F1F5F9]">
             <option value="">Todos</option>
             <option value="1">Activo</option>
             <option value="0">Inactivo</option>
         </select>
     </div>
 
-    <div class="bg-[#131720] border border-[#2A3047] rounded-xl overflow-hidden">
+    <div class="bg-[#334155] border border-[#475569] rounded-xl overflow-hidden">
         <table class="min-w-full">
-            <thead class="bg-[#1C2130]"><tr>
-                    <th class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-4 py-3 text-left">Cliente</th>
-                    <th class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-4 py-3 text-left">Cédula</th>
-                    <th class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-4 py-3 text-left">Teléfono</th>
-                    <th class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-4 py-3 text-left">Ciudad</th>
-                    <th class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-4 py-3 text-left">Pedidos</th>
-                    <th class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-4 py-3 text-left">Total</th>
-                    <th class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-4 py-3 text-left">Estado</th>
-                    <th class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-4 py-3 text-right">Acciones</th>
+            <thead class="bg-[#475569]"><tr>
+                    <th class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-3 text-left">Cliente</th>
+                    <th class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-3 text-left">Cédula</th>
+                    <th class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-3 text-left">Teléfono</th>
+                    <th class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-3 text-left">Ciudad</th>
+                    <th class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-3 text-left">Pedidos</th>
+                    <th class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-3 text-left">Total</th>
+                    <th class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-3 text-left">Estado</th>
+                    <th class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-3 text-right">Acciones</th>
                 </tr></thead>
             <tbody class="divide-y">
                 @foreach($clients as $client)
                     @php $stat = $ordersStats[$client->id] ?? null; @endphp
-                    <tr class="hover:bg-[#1C2130]">
+                    <tr class="hover:bg-[#475569]">
                         <td class="px-4 py-2 text-sm">
                             <div class="flex items-center gap-2">
                                 <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm text-white">{{ strtoupper(substr($client->name,0,1)) }}</div>
                                 <div>
                                     <div class="font-semibold text-[#F1F5F9]">{{ $client->name }}</div>
-                                    <div class="text-xs text-[#94A3B8]">{{ $client->email }}</div>
+                                    <div class="text-xs text-[#A0AEC0]">{{ $client->email }}</div>
                                 </div>
                             </div>
                         </td>
@@ -61,18 +61,18 @@
     <!-- Detail panel -->
     <div x-data wire:ignore.self x-show="$wire.showDetail" class="fixed inset-0 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-[#2B3346] border border-[#384457] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-xl">
-            <div class="p-5 border-b border-[#2A3047] flex items-center justify-between">
+            <div class="p-5 border-b border-[#475569] flex items-center justify-between">
                 <h3 class="font-bold text-base text-[#F1F5F9]">Ficha de cliente</h3>
-                <button wire:click.prevent="$set('showDetail', false)" class="w-8 h-8 bg-[#1C2130] border border-[#2A3047] rounded-lg text-[#94A3B8]">✕</button>
+                <button wire:click.prevent="$set('showDetail', false)" class="w-8 h-8 bg-[#475569] border border-[#475569] rounded-lg text-[#A0AEC0]">✕</button>
             </div>
             <div class="p-6">
                 @if($selectedClient)
                     <div class="flex items-start justify-between mb-4">
                         <div>
                             <h3 class="font-semibold mb-1 text-[#F1F5F9]">{{ $selectedClient->name }} {{ $selectedClient->apellido }}</h3>
-                            <div class="text-sm text-[#94A3B8]">Email: {{ $selectedClient->email }}</div>
-                            <div class="text-sm text-[#94A3B8]">Tel: {{ $selectedClient->telefono }} — Ciudad: {{ $selectedClient->ciudad }}</div>
-                            <div class="text-sm text-[#94A3B8]">Dirección: {{ $selectedClient->direccion }}</div>
+                            <div class="text-sm text-[#A0AEC0]">Email: {{ $selectedClient->email }}</div>
+                            <div class="text-sm text-[#A0AEC0]">Tel: {{ $selectedClient->telefono }} — Ciudad: {{ $selectedClient->ciudad }}</div>
+                            <div class="text-sm text-[#A0AEC0]">Dirección: {{ $selectedClient->direccion }}</div>
                         </div>
                         <div class="text-right">
                             @can('clientes.editar')
@@ -93,18 +93,18 @@
 
                     @if($editMode)
                         <div class="mb-4">
-                            <label class="block text-sm text-[#94A3B8]">Nombre</label>
-                            <input wire:model.defer="editData.name" class="w-full px-3 py-2 rounded bg-[#1C2130] border border-[#2A3047] text-[#F1F5F9]" />
-                            <label class="block text-sm text-[#94A3B8]">Apellido</label>
-                            <input wire:model.defer="editData.apellido" class="w-full px-3 py-2 rounded bg-[#1C2130] border border-[#2A3047] text-[#F1F5F9]" />
-                            <label class="block text-sm text-[#94A3B8]">Email</label>
-                            <input wire:model.defer="editData.email" class="w-full px-3 py-2 rounded bg-[#1C2130] border border-[#2A3047] text-[#F1F5F9]" />
-                            <label class="block text-sm text-[#94A3B8]">Teléfono</label>
-                            <input wire:model.defer="editData.telefono" class="w-full px-3 py-2 rounded bg-[#1C2130] border border-[#2A3047] text-[#F1F5F9]" />
-                            <label class="block text-sm text-[#94A3B8]">Dirección</label>
-                            <input wire:model.defer="editData.direccion" class="w-full px-3 py-2 rounded bg-[#1C2130] border border-[#2A3047] text-[#F1F5F9]" />
-                            <label class="block text-sm text-[#94A3B8]">Ciudad</label>
-                            <input wire:model.defer="editData.ciudad" class="w-full px-3 py-2 rounded bg-[#1C2130] border border-[#2A3047] text-[#F1F5F9]" />
+                            <label class="block text-sm text-[#A0AEC0]">Nombre</label>
+                            <input wire:model.defer="editData.name" class="w-full px-3 py-2 rounded bg-[#475569] border border-[#475569] text-[#F1F5F9]" />
+                            <label class="block text-sm text-[#A0AEC0]">Apellido</label>
+                            <input wire:model.defer="editData.apellido" class="w-full px-3 py-2 rounded bg-[#475569] border border-[#475569] text-[#F1F5F9]" />
+                            <label class="block text-sm text-[#A0AEC0]">Email</label>
+                            <input wire:model.defer="editData.email" class="w-full px-3 py-2 rounded bg-[#475569] border border-[#475569] text-[#F1F5F9]" />
+                            <label class="block text-sm text-[#A0AEC0]">Teléfono</label>
+                            <input wire:model.defer="editData.telefono" class="w-full px-3 py-2 rounded bg-[#475569] border border-[#475569] text-[#F1F5F9]" />
+                            <label class="block text-sm text-[#A0AEC0]">Dirección</label>
+                            <input wire:model.defer="editData.direccion" class="w-full px-3 py-2 rounded bg-[#475569] border border-[#475569] text-[#F1F5F9]" />
+                            <label class="block text-sm text-[#A0AEC0]">Ciudad</label>
+                            <input wire:model.defer="editData.ciudad" class="w-full px-3 py-2 rounded bg-[#475569] border border-[#475569] text-[#F1F5F9]" />
 
                             <div class="mt-3">
                                 <button wire:click.prevent="saveEdit" class="px-3 py-1 bg-green-600 text-white rounded-md">Guardar</button>
@@ -113,7 +113,7 @@
                         </div>
                     @endif
 
-                    <hr class="border-t border-[#2A3047] my-3" />
+                    <hr class="border-t border-[#475569] my-3" />
 
                     <div class="mb-3">
                         <h4 class="font-semibold text-[#F1F5F9]">Total histórico comprado</h4>
@@ -132,7 +132,7 @@
                     <div>
                         <h4 class="font-semibold text-[#F1F5F9]">Pagos rechazados</h4>
                         @if($detailRejectedPayments->isEmpty())
-                            <div class="text-sm text-[#94A3B8]">No se encontraron pagos rechazados recientes.</div>
+                            <div class="text-sm text-[#A0AEC0]">No se encontraron pagos rechazados recientes.</div>
                         @else
                             <ul>
                                 @foreach($detailRejectedPayments as $p)

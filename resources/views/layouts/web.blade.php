@@ -11,10 +11,11 @@
    DESIGN TOKENS
 ══════════════════════════════════════════ */
 :root {
-  --c-bg:        #0F1117;
-  --c-surface:   #1A1D27;
-  --c-surface2:  #22263A;
-  --c-border:    #2E3348;
+  --c-bg:        #1E293B;
+  --c-surface:   #334155;
+  --c-surface2:  #475569;
+  --c-border:    #475569;
+  --c-input-border: #475569;
   --c-blue:      #1D4ED8;
   --c-blue-h:    #2563EB;
   --c-teal:      #0D9488;
@@ -24,23 +25,24 @@
   --c-green:     #059669;
   --c-text:      #F1F5F9;
   --c-muted:     #94A3B8;
-  --c-card:      #1A1D27;
-  --c-input:     #0F1117;
-  --c-shadow:    rgba(0,0,0,.5);
+  --c-card:      #334155;
+  --c-input:     #1E293B;
+  --c-shadow:    rgba(0,0,0,.4);
   --r:           10px;
   --font:        'Inter', system-ui, sans-serif;
   --transition:  .18s ease;
 }
 [data-theme="light"] {
-  --c-bg:        #F8FAFC;
-  --c-surface:   #FFFFFF;
+  --c-bg:        #E8ECF2;
+  --c-surface:   #FBFCFE;
   --c-surface2:  #F1F5F9;
   --c-border:    #E2E8F0;
+  --c-input-border: #CBD5E1;
   --c-text:      #0F172A;
-  --c-muted:     #64748B;
-  --c-card:      #FFFFFF;
-  --c-input:     #F8FAFC;
-  --c-shadow:    rgba(0,0,0,.1);
+  --c-muted:     #475569;
+  --c-card:      #FBFCFE;
+  --c-input:     #FFFFFF;
+  --c-shadow:    rgba(0,0,0,.14);
 }
 
 /* ═══════════════════════════════════════════
@@ -102,13 +104,13 @@ input, select, textarea { font-family: inherit; }
 }
 .navbar-search input {
   width: 100%; padding: .55rem 1rem .55rem 2.8rem;
-  background: var(--c-surface2); border: 1px solid var(--c-border);
+  background: var(--c-surface2); border: 1px solid var(--c-input-border);
   border-radius: 50px; color: var(--c-text); font-size: .9rem;
   transition: border-color var(--transition), box-shadow var(--transition);
   outline: none;
 }
 .navbar-search input:focus {
-  border-color: var(--c-blue); box-shadow: 0 0 0 3px rgba(29,78,216,.2);
+  border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59,130,246,.25);
 }
 .navbar-search input::placeholder { color: var(--c-muted); }
 .search-icon {
@@ -204,10 +206,13 @@ input, select, textarea { font-family: inherit; }
 }
 .filter-select {
   padding: .45rem .9rem; border-radius: 8px;
-  background: var(--c-surface2); border: 1px solid var(--c-border);
+  background: var(--c-surface2); border: 1px solid var(--c-input-border);
   color: var(--c-text); font-size: .85rem; cursor: pointer; outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
 }
-.filter-select:focus { border-color: var(--c-blue); }
+.filter-select:focus {
+  border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59,130,246,.25);
+}
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -216,6 +221,7 @@ input, select, textarea { font-family: inherit; }
 .product-card {
   background: var(--c-card); border: 1px solid var(--c-border);
   border-radius: 14px; overflow: hidden;
+  box-shadow: 0 1px 3px var(--c-shadow), 0 1px 2px var(--c-shadow);
   transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
   cursor: pointer;
 }
@@ -432,15 +438,24 @@ input, select, textarea { font-family: inherit; }
 .form-label { font-size: .82rem; font-weight: 600; color: var(--c-muted); display: block; margin-bottom: .4rem; letter-spacing: .04em; text-transform: uppercase; }
 .form-input {
   width: 100%; padding: .7rem 1rem; border-radius: 10px;
-  background: var(--c-input); border: 1px solid var(--c-border);
+  background: var(--c-input); border: 1px solid var(--c-input-border);
   color: var(--c-text); font-size: .9rem; outline: none;
   transition: border-color var(--transition), box-shadow var(--transition);
+}
+.form-input:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.25);
 }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
 .form-select {
   width: 100%; padding: .7rem 1rem; border-radius: 10px;
-  background: var(--c-input); border: 1px solid var(--c-border);
+  background: var(--c-input); border: 1px solid var(--c-input-border);
   color: var(--c-text); font-size: .9rem; outline: none; cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.form-select:focus {
+  border-color: #3B82F6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.25);
 }
 .form-submit {
   width: 100%; padding: .85rem; border-radius: 12px; border: none;
@@ -466,6 +481,7 @@ input, select, textarea { font-family: inherit; }
 .panel {
   background: var(--c-surface); border: 1px solid var(--c-border);
   border-radius: 14px; padding: 1.5rem; margin-bottom: 1.2rem;
+  box-shadow: 0 1px 3px var(--c-shadow), 0 1px 2px var(--c-shadow);
 }
 .payment-methods {
   display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1.2rem;

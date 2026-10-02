@@ -11,9 +11,9 @@
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-[#0B0E17]">
+<body class="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-[#1E293B]">
     <div class="max-w-md w-full">
-        <div class="bg-white dark:bg-[#131720] shadow-md rounded-lg p-6">
+        <div class="bg-white dark:bg-[#334155] shadow-md rounded-lg p-6">
             <div class="text-center mb-4">
                 <div class="text-3xl font-bold text-blue-600">SMARTPHONE WORLD C.A
                 </div>
