@@ -53,6 +53,17 @@ class AuthController extends Controller
             'telefono'  => 'nullable|string|max:20',
             'ciudad'    => 'nullable|string|max:80',
             'direccion' => 'nullable|string|max:500',
+        ], [
+            'name.required'      => 'El nombre es obligatorio.',
+            'apellido.required'  => 'El apellido es obligatorio.',
+            'email.required'     => 'El correo electrónico es obligatorio.',
+            'email.email'        => 'Ingresa un correo electrónico válido.',
+            'email.unique'       => 'Este correo electrónico ya está registrado.',
+            'password.required'  => 'La contraseña es obligatoria.',
+            'password.min'       => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.confirmed' => 'Las contraseñas no coinciden.',
+            'cedula.unique'      => 'Esta cédula ya está registrada.',
+            'telefono.max'       => 'El teléfono no puede superar 20 caracteres.',
         ]);
 
         $rolCliente = Role::where('nombre', 'cliente')->first();

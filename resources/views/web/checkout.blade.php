@@ -121,12 +121,14 @@
 
         <div class="form-group" x-show="metodo !== 'fisico'">
           <label class="form-label">Comprobante de pago (imagen o PDF)</label>
-          <div class="upload-area" @click.prevent="$refs.file.click()">
-            <input x-ref="file" type="file" name="comprobante" accept="image/png,image/jpeg,application/pdf" @change="onFileChange($event)" style="display:none">
-            <div class="upload-icon">📎</div>
+          <input id="comprobante" x-ref="file" type="file" name="comprobante" accept="image/png,image/jpeg,application/pdf" @change="onFileChange($event)" style="display:none">
+          <label class="upload-area" for="comprobante" style="display:block;cursor:pointer"
+            @dragover.prevent=""
+            @drop.prevent="onDrop($event)">
+            <div class="upload-icon" x-text="fileName ? '✅' : '📎'"></div>
             <div class="upload-text" x-text="fileName ? fileName : 'Arrastra o haz click para subir el comprobante'"></div>
-            <div class="upload-hint">PNG, JPG o PDF - Máx 5MB</div>
-          </div>
+            <div class="upload-hint" x-text="fileHint ? fileHint : 'PNG, JPG o PDF - Máx 5MB'"></div>
+          </label>
           @error('comprobante')<div style="color:#EF4444;font-size:.8rem;margin-top:.3rem">{{ $message }}</div>@enderror
           <div class="security-note">El archivo se almacena de forma segura y solo el personal autorizado puede verificarlo.</div>
         </div>
@@ -176,6 +178,7 @@ function checkoutApp() {
     metodo: 'transferencia',
     tipoEntrega: 'retiro',
     fileName: '',
+    fileHint: '',
     reserving: false,
     reserveResult: null,
     async init() {
@@ -203,8 +206,22 @@ function checkoutApp() {
     get total() { return this.carrito.reduce((s,i) => s + i.precio * i.cantidad, 0); },
     onFileChange(e) {
       const f = e.target.files && e.target.files[0];
-      if (f) this.fileName = f.name;
-      else this.fileName = '';
+      if (f) {
+        this.fileName = f.name;
+        this.fileHint = (f.size / 1024).toFixed(0) + ' KB · ' + (f.type || 'archivo');
+      } else {
+        this.fileName = '';
+        this.fileHint = '';
+      }
+    },
+    onDrop(e) {
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        this.$refs.file.files = dt.files;
+        const f = dt.files[0];
+        this.fileName = f.name;
+        this.fileHint = (f.size / 1024).toFixed(0) + ' KB · ' + (f.type || 'archivo');
+      }
     }
   }
 }
