@@ -663,7 +663,7 @@ input, select, textarea { font-family: inherit; }
     @endguest
 
     @auth
-      <span class="nav-btn nav-btn-ghost">👤 {{ auth()->user()->name }}</span>
+      <a href="{{ route('web.account') }}" class="nav-btn nav-btn-ghost">👤 {{ auth()->user()->name }}</a>
       <form method="POST" action="{{ route('web.logout') }}" style="display:inline">
         @csrf
         <button type="submit" class="nav-btn nav-btn-ghost">Salir</button>

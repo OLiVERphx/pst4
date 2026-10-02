@@ -109,6 +109,8 @@ Route::middleware('auth')->group(function () {
         ->name('web.order.confirmed');
     Route::get('/mi-cuenta', [\App\Http\Controllers\Web\AccountController::class, 'index'])
         ->name('web.account');
+    Route::match(['post', 'put'], '/mi-cuenta/perfil', [\App\Http\Controllers\Web\AccountController::class, 'updateProfile'])
+        ->name('web.account.update');
 
     // Carrito persistente API (usuario o invitado via token en sesión)
     Route::post('/cart/add', [\App\Http\Controllers\Web\CartController::class, 'add'])
