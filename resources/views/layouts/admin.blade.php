@@ -80,14 +80,14 @@ function adminApp() {
                     <a href="{{ route('admin.pedidos.lista') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">📦</span>
                         <span class="font-medium">Pedidos</span>
-                        <span class="ml-auto bg-[#EA580C] text-white text-[11px] font-bold rounded-full px-2 py-0.5">{{ $stats['pedidos_pendientes'] ?? 0 }}</span>
+                        <span class="ml-auto bg-[#EA580C] text-white text-[11px] font-bold rounded-full px-2 py-0.5">{{ $sidebarStats['pedidos_pendientes'] ?? 0 }}</span>
                     </a>
                 </li>
                 <li>
                     <a href="{{ route('admin.payments.lista') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">💳</span>
                         <span class="font-medium">Verificar Pagos</span>
-                        <span class="ml-auto bg-[#EA580C] text-white text-[11px] font-bold rounded-full px-2 py-0.5">{{ $stats['pagos_por_verificar'] ?? 0 }}</span>
+                        <span class="ml-auto bg-[#EA580C] text-white text-[11px] font-bold rounded-full px-2 py-0.5">{{ $sidebarStats['pagos_por_verificar'] ?? 0 }}</span>
                     </a>
                 </li>
                 <li>

@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        \Illuminate\Support\Facades\View::composer('layouts.admin', function ($view) {
+            if (auth()->check()) {
+                $view->with('sidebarStats', app(\App\Services\ServicioDashboard::class)->obtenerEstadisticas());
+            }
+        });
     }
 }

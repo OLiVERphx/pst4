@@ -58,36 +58,80 @@
     </div>
 
     <!-- Detail panel/modal -->
-    <div x-data wire:ignore.self x-show="$wire.showDetail" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-end">
-        <div class="bg-[#2B3346] rounded p-4 w-1/3 h-full overflow-auto border border-[#384457] shadow-xl">
+    <div x-data wire:ignore.self x-show="$wire.showDetail" x-transition.opacity class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-end z-50">
+        <div class="bg-[#334155] w-full max-w-md h-full overflow-y-auto border-l border-[#475569] shadow-2xl flex flex-col">
             @if($selectedOrder)
-                <h3 class="font-semibold mb-2 text-[#F1F5F9]">Pedido {{ $selectedOrder->numero_pedido }}</h3>
-                <div class="mb-3 text-[#F1F5F9] text-sm space-y-1">
-                    <div><span class="text-[#A0AEC0]">Cliente:</span> {{ $selectedOrder->user?->name ?? 'Invitado' }}</div>
-                    <div><span class="text-[#A0AEC0]">Tipo de entrega:</span> {{ ucfirst($selectedOrder->tipo_entrega ?? 'retiro') }}</div>
-                    <div><span class="text-[#A0AEC0]">Método de pago:</span> {{ ucfirst($selectedOrder->payment?->metodo ?? 'fisico') }}</div>
-                    <div><span class="text-[#A0AEC0]">Total:</span> ${{ number_format($selectedOrder->total, 2) }}</div>
-                    <div><span class="text-[#A0AEC0]">Estado:</span> <span class="font-semibold">{{ \App\Helpers\LabelHelper::translateStatus($selectedOrder->estado) }}</span></div>
+                @php
+                    $st = $selectedOrder->estado;
+                    $badgeClass = 'bg-[#94A3B8]/10 text-[#94A3B8]';
+                    if(in_array($st, ['pendiente','pago_subido','pago_a_confirmar'])) $badgeClass = 'bg-[#EA580C]/10 text-[#EA580C]';
+                    elseif(in_array($st, ['pago_verificado','entregado','completado','activo'])) $badgeClass = 'bg-[#059669]/10 text-[#059669]';
+                    elseif(in_array($st, ['procesando','listo_para_retirar'])) $badgeClass = 'bg-[#7C3AED]/10 text-[#7C3AED]';
+                    elseif(in_array($st, ['enviado','en_camino','pago_confirmado','pago_confirmado_retirar','en_transito','en_transición'])) $badgeClass = 'bg-[#1D4ED8]/10 text-[#1D4ED8]';
+                    $siguienteLabel = $this->proximoEstadoLabel($selectedOrder);
+                @endphp
+
+                <!-- Header -->
+                <div class="flex items-start justify-between p-5 border-b border-[#475569]">
+                    <div>
+                        <div class="text-xs text-[#A0AEC0] font-semibold uppercase tracking-wide mb-1">Pedido</div>
+                        <div class="text-lg font-bold text-[#F1F5F9]">{{ $selectedOrder->numero_pedido }}</div>
+                        <span class="inline-block mt-2 px-2.5 py-1 rounded-full text-xs font-semibold {{ $badgeClass }}">
+                            {{ \App\Helpers\LabelHelper::translateStatus($st) }}
+                        </span>
+                    </div>
+                    <button wire:click.prevent="$set('showDetail', false)" class="text-[#A0AEC0] hover:text-[#F1F5F9] text-xl leading-none">✕</button>
                 </div>
 
-                <h4 class="font-semibold mb-1 text-[#F1F5F9]">Items</h4>
-                <ul class="mb-3 text-[#F1F5F9]">
-                    @foreach($selectedOrder->items as $it)
-                        <li class="text-sm">{{ $it->product?->nombre ?? 'Producto eliminado' }} x{{ $it->cantidad }} - ${{ number_format($it->precio_unitario, 2) }}</li>
-                    @endforeach
-                </ul>
+                <!-- Datos -->
+                <div class="grid grid-cols-2 gap-4 p-5 border-b border-[#475569]">
+                    <div>
+                        <div class="text-xs text-[#A0AEC0] mb-1">Cliente</div>
+                        <div class="text-sm text-[#F1F5F9] font-medium">{{ $selectedOrder->user?->name ?? 'Invitado' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-[#A0AEC0] mb-1">Tipo de entrega</div>
+                        <div class="text-sm text-[#F1F5F9] font-medium">{{ $selectedOrder->tipo_entrega === 'delivery' ? '🚚 Delivery' : '🏪 Retiro' }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-[#A0AEC0] mb-1">Método de pago</div>
+                        <div class="text-sm text-[#F1F5F9] font-medium">{{ ucfirst($selectedOrder->payment?->metodo ?? 'fisico') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-[#A0AEC0] mb-1">Fecha</div>
+                        <div class="text-sm text-[#F1F5F9] font-medium">{{ $selectedOrder->created_at->format('d/m/Y H:i') }}</div>
+                    </div>
+                </div>
 
-                <div class="flex flex-wrap gap-2">
-                    @php
-                        $siguienteLabel = $this->proximoEstadoLabel($selectedOrder);
-                    @endphp
+                <!-- Items -->
+                <div class="p-5 flex-1">
+                    <div class="text-xs text-[#A0AEC0] font-semibold uppercase tracking-wide mb-3">Items</div>
+                    <div class="space-y-2">
+                        @foreach($selectedOrder->items as $it)
+                            <div class="flex items-center justify-between bg-[#475569]/30 rounded-lg px-3 py-2.5">
+                                <div>
+                                    <div class="text-sm text-[#F1F5F9] font-medium">{{ $it->product?->nombre ?? 'Producto eliminado' }}</div>
+                                    <div class="text-xs text-[#A0AEC0]">× {{ $it->cantidad }} — ${{ number_format($it->precio_unitario, 2) }} c/u</div>
+                                </div>
+                                <div class="text-sm text-[#F1F5F9] font-semibold">${{ number_format($it->cantidad * $it->precio_unitario, 2) }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div class="flex items-center justify-between mt-4 pt-4 border-t border-[#475569]">
+                        <span class="text-sm text-[#A0AEC0] font-semibold">Total</span>
+                        <span class="text-lg text-[#F1F5F9] font-bold">${{ number_format($selectedOrder->total, 2) }}</span>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="p-5 border-t border-[#475569] flex flex-col gap-2">
                     @if($siguienteLabel)
-                        <button wire:click.prevent="advance({{ $selectedOrder->id }})" class="bg-[#1D4ED8] text-white px-3 py-2 rounded text-sm hover:bg-[#1e40af] transition font-medium">
+                        <button wire:click.prevent="advance({{ $selectedOrder->id }})" class="w-full bg-[#1D4ED8] text-white px-3 py-2.5 rounded-lg text-sm hover:bg-[#1e40af] transition font-semibold">
                             Avanzar a: {{ $siguienteLabel }}
                         </button>
                     @endif
-                    <button wire:click.prevent="cancel({{ $selectedOrder->id }}, 'Cancelado desde admin')" class="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 transition">Cancelar</button>
-                    <button wire:click.prevent="$set('showDetail', false)" class="bg-[#475569] text-white px-3 py-2 rounded text-sm hover:bg-[#384457] transition">Cerrar</button>
+                    <button wire:click.prevent="cancel({{ $selectedOrder->id }}, 'Cancelado desde admin')" class="w-full bg-red-600/90 text-white px-3 py-2.5 rounded-lg text-sm hover:bg-red-600 transition font-medium">Cancelar pedido</button>
                 </div>
             @endif
         </div>
