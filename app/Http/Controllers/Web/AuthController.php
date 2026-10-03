@@ -82,6 +82,8 @@ class AuthController extends Controller
             'estado'    => 'Trujillo',
         ]);
 
+        $user->assignRole('cliente');
+
         Auth::login($user);
 
         return redirect()->route('web.home');
