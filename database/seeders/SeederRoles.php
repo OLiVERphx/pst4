@@ -62,11 +62,13 @@ class SeederRoles extends Seeder
             'pagos.ver', 'pagos.aprobar', 'pagos.rechazar',
             'inventario.ver', 'inventario.ajustar',
             'pedidos.ver', 'pedidos.crear', 'pedidos.anular',
-            'clientes.ver', 'clientes.editar',
+            'clientes.ver', 'clientes.editar', 'clientes.bloquear',
             'reportes.ver',
             'auditoria.ver',
             'configuracion.editar',
-            'productos.ver', 'productos.editar'
+            'productos.ver', 'productos.editar',
+            'usuarios.gestionar',
+            'respaldos.gestionar',
         ];
 
         // Crear todos los permisos
@@ -74,17 +76,26 @@ class SeederRoles extends Seeder
             Permission::firstOrCreate(['name' => $permiso, 'guard_name' => 'web']);
         }
 
-        // Asignar TODO a superadmin y admin
+        // Asignar TODO a superadmin
         $superadmin->syncPermissions(Permission::all());
-        $admin->syncPermissions(Permission::all());
 
-        // Asignar permisos específicos a vendedor
+        // Asignar a admin (dueño del negocio: todo excepto gestión de usuarios y respaldos)
+        $adminPermisos = collect($permisos)
+            ->reject(fn($p) => in_array($p, ['usuarios.gestionar', 'respaldos.gestionar']))
+            ->values()
+            ->all();
+        $admin->syncPermissions($adminPermisos);
+
+        // Asignar permisos específicos a vendedor (incluye verificar pagos en tienda)
         $vendedor->syncPermissions([
             'pedidos.crear', 
             'pedidos.ver', 
             'inventario.ver', 
             'productos.ver', 
-            'clientes.ver'
+            'clientes.ver',
+            'pagos.ver',
+            'pagos.aprobar',
+            'pagos.rechazar',
         ]);
     }
 }

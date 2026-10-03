@@ -8,6 +8,7 @@ use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Services\ServicioInventario;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Livewire: Tabla de movimientos de inventario.
@@ -62,6 +63,8 @@ class InventoryMovementsTable extends Component
 
     public function openCreate($productId = null)
     {
+        Gate::authorize('inventario.ajustar');
+
         $this->reset(['form']);
         $this->form = [
             'producto_id' => $productId,
@@ -75,8 +78,10 @@ class InventoryMovementsTable extends Component
 
     public function save(ServicioInventario $service)
     {
+        Gate::authorize('inventario.ajustar');
+
         $this->validate([
-            'form.producto_id' => 'required|exists:productos,id',
+            'form.producto_id' => 'required|exists:products,id',
             'form.tipo' => 'required|in:entrada,salida,ajuste,reserva,liberacion',
             'form.cantidad' => 'required|integer|min:1',
             'form.referencia' => 'nullable|string|max:100',

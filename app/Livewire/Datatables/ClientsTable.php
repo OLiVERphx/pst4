@@ -75,10 +75,28 @@ class ClientsTable extends Component
 
     public function toggleActivo($clientId)
     {
+        $actor = Auth::user();
+        if (! $actor || (! $actor->can('clientes.bloquear') && ! $actor->can('clientes.editar'))) {
+            abort(403, 'No autorizado para modificar el estado del cliente.');
+        }
+
         $u = User::find($clientId);
         if (!$u) return;
-        $u->activo = !$u->activo;
-        $u->save();
+
+        // Proteger usuarios administrativos de ser modificados desde el listado de clientes
+        if ($u->hasAnyRole(['superadmin', 'admin', 'vendedor']) && ! $actor->hasRole('superadmin')) {
+            abort(403, 'No se puede modificar un usuario administrativo desde esta vista.');
+        }
+
+        DB::transaction(function () use ($u, $actor) {
+            $antes = ['activo' => (bool)$u->activo];
+            $u->activo = ! (bool)$u->activo;
+            $u->save();
+            $despues = ['activo' => (bool)$u->activo];
+
+            ServicioAuditoria::registrar('cliente.activo_cambiado', $u, $antes, $despues, $actor->id);
+        });
+
         $this->dispatch('client-updated');
     }
 
@@ -201,8 +219,6 @@ class ClientsTable extends Component
     public function toggleBlock($clientId)
     {
         $actor = Auth::user();
-        // Asegurar existencia del permiso
-        Permission::firstOrCreate(['name' => 'clientes.bloquear']);
 
         if (! $actor || ! $actor->can('clientes.bloquear')) {
             abort(403, 'No autorizado para bloquear clientes.');

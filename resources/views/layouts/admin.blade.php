@@ -134,6 +134,22 @@ function adminApp() {
 
             <div class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-2">SISTEMA</div>
             <ul>
+                @can('usuarios.gestionar')
+                <li>
+                    <a href="{{ route('admin.usuarios.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] {{ request()->routeIs('admin.usuarios.*') ? 'border-[#1D4ED8] bg-[#475569] text-[#F1F5F9] font-semibold' : 'border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]' }}">
+                        <span class="text-xl">👤</span>
+                        <span class="font-medium">Usuarios</span>
+                    </a>
+                </li>
+                @endcan
+                @can('respaldos.gestionar')
+                <li>
+                    <a href="{{ route('admin.respaldos.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] {{ request()->routeIs('admin.respaldos.*') ? 'border-[#1D4ED8] bg-[#475569] text-[#F1F5F9] font-semibold' : 'border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]' }}">
+                        <span class="text-xl">💾</span>
+                        <span class="font-medium">Respaldos</span>
+                    </a>
+                </li>
+                @endcan
                 @can('auditoria.ver')
                 <li>
                     <a href="{{ route('admin.auditoria.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] {{ request()->routeIs('admin.auditoria.*') ? 'border-[#1D4ED8] bg-[#475569] text-[#F1F5F9] font-semibold' : 'border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]' }}">
@@ -142,12 +158,14 @@ function adminApp() {
                     </a>
                 </li>
                 @endcan
+                @can('configuracion.editar')
                 <li>
                     <a href="{{ route('admin.settings.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] {{ request()->routeIs('admin.settings.*') ? 'border-[#1D4ED8] bg-[#475569] text-[#F1F5F9] font-semibold' : 'border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]' }}">
                         <span class="text-xl">⚙️</span>
                         <span class="font-medium">Configuración</span>
                     </a>
                 </li>
+                @endcan
             </ul>
         </nav>
 

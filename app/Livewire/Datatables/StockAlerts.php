@@ -7,6 +7,7 @@ use App\Models\StockAlert;
 use App\Models\Product;
 use App\Services\ServicioInventario;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Livewire: Lista de alertas de stock.
@@ -31,6 +32,8 @@ class StockAlerts extends Component
 
     public function markAsRead(StockAlert $alert)
     {
+        Gate::authorize('inventario.ajustar');
+
         $alert->leido = true;
         $alert->save();
         $this->dispatch('inventory-saved');
@@ -38,6 +41,8 @@ class StockAlerts extends Component
 
     public function openReplenish(StockAlert $alert)
     {
+        Gate::authorize('inventario.ajustar');
+
         $this->productId = $alert->producto_id;
         $this->cantidad = 1;
         $this->referencia = null;
@@ -47,8 +52,10 @@ class StockAlerts extends Component
 
     public function save(ServicioInventario $service)
     {
+        Gate::authorize('inventario.ajustar');
+
         $this->validate([
-            'productId' => 'required|exists:productos,id',
+            'productId' => 'required|exists:products,id',
             'cantidad' => 'required|integer|min:1',
         ]);
 

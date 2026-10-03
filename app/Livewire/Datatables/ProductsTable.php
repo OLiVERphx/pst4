@@ -8,6 +8,10 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Brand;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Services\ServicioAuditoria;
 
 /**
  * Livewire component for products datatable.
@@ -74,6 +78,8 @@ class ProductsTable extends Component
      */
     public function openCreate()
     {
+        Gate::authorize('productos.editar');
+
         $this->reset(['form', 'editingProduct']);
         $this->form = [
             'codigo' => '',
@@ -100,6 +106,8 @@ class ProductsTable extends Component
      */
     public function openEdit(Product $product)
     {
+        Gate::authorize('productos.editar');
+
         $this->editingProduct = $product->id;
         $this->form = $product->toArray();
         $this->form['imagenes'] = $product->imagenes ?? [];
@@ -108,6 +116,8 @@ class ProductsTable extends Component
 
     public function save()
     {
+        Gate::authorize('productos.editar');
+
         $rules = [
             'form.codigo' => ['required', 'string', 'max:30', Rule::unique('products', 'codigo')->ignore($this->editingProduct)],
             'form.nombre' => 'required|string|max:200',
@@ -132,13 +142,22 @@ class ProductsTable extends Component
         $data['activo'] = (bool) ($data['activo'] ?? true);
         $data['destacado'] = (bool) ($data['destacado'] ?? false);
 
-        // Ajuste de nombres de tabla: Product model usa tabla 'productos'
-        if ($this->editingProduct) {
-            $product = Product::find($this->editingProduct);
-            $product->update($data);
-        } else {
-            Product::create($data);
-        }
+        DB::transaction(function () use ($data) {
+            $actorId = Auth::id();
+            if ($this->editingProduct) {
+                $product = Product::where('id', $this->editingProduct)->lockForUpdate()->first();
+                if ($product) {
+                    $antes = $product->only(['codigo', 'nombre', 'precio_detal', 'precio_mayor', 'stock', 'activo']);
+                    $product->update($data);
+                    $despues = $product->only(['codigo', 'nombre', 'precio_detal', 'precio_mayor', 'stock', 'activo']);
+                    ServicioAuditoria::registrar('producto.modificado', $product, $antes, $despues, $actorId);
+                }
+            } else {
+                $product = Product::create($data);
+                $despues = $product->only(['codigo', 'nombre', 'precio_detal', 'precio_mayor', 'stock', 'activo']);
+                ServicioAuditoria::registrar('producto.creado', $product, null, $despues, $actorId);
+            }
+        });
 
         $this->showModal = false;
         $this->editingProduct = null;
@@ -148,14 +167,32 @@ class ProductsTable extends Component
 
     public function delete(Product $product)
     {
-        $product->delete();
+        Gate::authorize('productos.editar');
+
+        DB::transaction(function () use ($product) {
+            $lockedProduct = Product::where('id', $product->id)->lockForUpdate()->first() ?? $product;
+            $antes = ['deleted_at' => null];
+            $lockedProduct->delete();
+            $despues = ['deleted_at' => (string)now()];
+            ServicioAuditoria::registrar('producto.eliminado', $lockedProduct, $antes, $despues, Auth::id());
+        });
+
         $this->resetPage();
     }
 
     public function toggleActive(Product $product)
     {
-        $product->activo = !$product->activo;
-        $product->save();
+        Gate::authorize('productos.editar');
+
+        DB::transaction(function () use ($product) {
+            $lockedProduct = Product::where('id', $product->id)->lockForUpdate()->first() ?? $product;
+            $antes = ['activo' => $lockedProduct->activo];
+            $lockedProduct->activo = !$lockedProduct->activo;
+            $lockedProduct->save();
+            $despues = ['activo' => $lockedProduct->activo];
+            ServicioAuditoria::registrar('producto.estado_cambiado', $lockedProduct, $antes, $despues, Auth::id());
+        });
+
         $this->dispatch('product-saved');
     }
 

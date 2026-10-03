@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use App\Models\Order;
 use App\Services\ServicioPedidos;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Livewire: Tabla de pedidos para el admin.
@@ -74,6 +75,18 @@ class OrdersTable extends Component
 
     public function advance(Order $order, ServicioPedidos $service)
     {
+        $service = $service ?? app(ServicioPedidos::class);
+        $flow = $service->obtenerFlujoParaPedido($order);
+        $pos = array_search($order->estado, $flow, true);
+        $next = ($pos !== false && isset($flow[$pos + 1])) ? $flow[$pos + 1] : null;
+
+        // Si la transición aprueba o confirma un pago, exigir permiso específico pagos.aprobar
+        if ($next && in_array($next, ['pago_confirmado', 'pago_confirmado_retirar'])) {
+            Gate::authorize('pagos.aprobar');
+        } else {
+            Gate::authorize('pedidos.ver');
+        }
+
         $updated = $service->avanzarEstado($order, Auth::user());
         if ($this->selectedOrder && $this->selectedOrder->id === $order->id) {
             $this->selectedOrder = $updated->load('items.product', 'user', 'payment');
@@ -83,6 +96,8 @@ class OrdersTable extends Component
 
     public function cancel(Order $order, $reason, ServicioPedidos $service)
     {
+        Gate::authorize('pedidos.anular');
+
         $updated = $service->cancel($order, Auth::user(), $reason);
         if ($this->selectedOrder && $this->selectedOrder->id === $order->id) {
             $this->selectedOrder = $updated->load('items.product', 'user', 'payment');

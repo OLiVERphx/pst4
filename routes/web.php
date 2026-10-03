@@ -6,7 +6,7 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 
 // Admin authentication routes
 Route::get('/admin/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
-Route::post('/admin/login', [AdminAuthController::class, 'login']);
+Route::post('/admin/login', [AdminAuthController::class, 'login'])->middleware('throttle:5,1');
 Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->middleware('auth')->name('admin.logout');
 
 // Admin protected routes
@@ -74,6 +74,26 @@ Route::middleware(['auth', 'active', 'admin'])
         })
             ->name('ventalocal.index')
             ->middleware('can:pedidos.crear');
+
+        // Control de Usuarios (Solo Superadmin)
+        Route::get('usuarios', function () {
+            return view('admin.usuarios.index');
+        })
+            ->name('usuarios.index')
+            ->middleware('can:usuarios.gestionar');
+
+        // Respaldos de Base de Datos (Solo Superadmin)
+        Route::get('respaldos', function () {
+            return view('admin.respaldos.index');
+        })
+            ->name('respaldos.index')
+            ->middleware('can:respaldos.gestionar');
+
+        Route::get('respaldos/descargar/{archivo}', function (string $archivo, \App\Services\ServicioRespaldos $servicio) {
+            return $servicio->descargarRespaldo($archivo);
+        })
+            ->name('respaldos.descargar')
+            ->middleware('can:respaldos.gestionar');
     });
 
 
@@ -81,10 +101,10 @@ Route::middleware(['auth', 'active', 'admin'])
 Route::middleware('guest:web')->group(function () {
     Route::get('/login',    [\App\Http\Controllers\Web\AuthController::class, 'showLogin'])
         ->name('web.login');
-    Route::post('/login',   [\App\Http\Controllers\Web\AuthController::class, 'login']);
+    Route::post('/login',   [\App\Http\Controllers\Web\AuthController::class, 'login'])->middleware('throttle:5,1');
     Route::get('/registro', [\App\Http\Controllers\Web\AuthController::class, 'showRegister'])
         ->name('web.register');
-    Route::post('/registro', [\App\Http\Controllers\Web\AuthController::class, 'register']);
+    Route::post('/registro', [\App\Http\Controllers\Web\AuthController::class, 'register'])->middleware('throttle:10,1');
 });
 
 Route::post('/logout', [\App\Http\Controllers\Web\AuthController::class, 'logout'])
