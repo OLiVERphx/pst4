@@ -85,6 +85,7 @@ class ServicioDashboard
             'pedidos_pendientes' => (int)$pedidosPendientes,
             'pagos_por_verificar' => (int)$pagosPorVerificar,
             'cantidad_stock_bajo' => (int)$cantidadStockBajo,
+            'alertas_stock' => (int)$cantidadStockBajo, // alias de cantidad_stock_bajo, usado por el sidebar
             'ventas_por_categoria' => $ventasPorCategoria,
             'ventas_semanales' => $ventasSemanales,
         ];

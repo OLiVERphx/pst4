@@ -1,5 +1,5 @@
 <!doctype html>
-<html x-data="adminApp()" :class="darkMode ? 'dark' : ''" lang="es">
+<html x-data="adminApp()" lang="es">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -39,12 +39,7 @@
 <script>
 function adminApp() {
     return {
-        darkMode: (localStorage.getItem('theme') !== 'light'),
         sidebarOpen: window.innerWidth > 768,
-        toggleTheme() {
-            this.darkMode = !this.darkMode;
-            localStorage.setItem('theme', this.darkMode ? 'dark' : 'light');
-        },
         toggleSidebar() { this.sidebarOpen = !this.sidebarOpen }
     }
 }
@@ -52,8 +47,8 @@ function adminApp() {
 
 <div class="flex">
     <!-- Sidebar -->
-    <aside x-show="sidebarOpen" x-cloak class="fixed top-0 left-0 h-screen w-60 bg-[#334155] border-r border-[#384457] flex flex-col z-40">
-        <div class="flex-shrink-0 p-4 border-b border-[#384457]">
+    <aside x-show="sidebarOpen" x-cloak class="fixed top-0 left-0 h-screen w-60 bg-[#334155] border-r border-[#475569] flex flex-col z-40">
+        <div class="flex-shrink-0 p-4 border-b border-[#475569]">
             <div class="flex items-center">
                 <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#1D4ED8] to-[#0D9488] flex items-center justify-center text-white font-bold">SW</div>
                 <div class="ml-3">
@@ -122,7 +117,7 @@ function adminApp() {
                     <a href="{{ url('/admin/inventory/alerts') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">⚠️</span>
                         <span class="font-medium">Alertas Stock</span>
-                        <span class="ml-auto bg-[#EA580C] text-white text-[11px] font-bold rounded-full px-2 py-0.5">{{ $stats['alertas_stock'] ?? 0 }}</span>
+                        <span class="ml-auto bg-[#EA580C] text-white text-[11px] font-bold rounded-full px-2 py-0.5">{{ $sidebarStats['alertas_stock'] ?? 0 }}</span>
                     </a>
                 </li>
             </ul>
@@ -170,7 +165,7 @@ function adminApp() {
     <!-- Main content wrapper -->
     <div :class="sidebarOpen ? 'ml-60' : 'ml-0'" class="flex-1 min-h-screen transition-all duration-200">
         <!-- Topbar -->
-        <header class="sticky top-0 ml-60 h-14 bg-[#334155] border-b border-[#384457] flex items-center px-6 gap-4 z-20">
+        <header class="sticky top-0 ml-60 h-14 bg-[#334155] border-b border-[#475569] flex items-center px-6 gap-4 z-20">
             <h2 class="text-lg font-semibold text-[#F1F5F9]">@yield('pageTitle', 'Panel')</h2>
 
             <div class="flex-1 flex items-center justify-center">
@@ -181,19 +176,18 @@ function adminApp() {
             </div>
 
             <div class="ml-auto flex items-center gap-3">
-                <button @click="toggleTheme()" class="w-8 h-8 bg-[#475569] border border-[#475569] rounded-lg hover:bg-[#242A3D] flex items-center justify-center">🌙</button>
-                <button class="relative w-8 h-8 bg-[#475569] border border-[#475569] rounded-lg hover:bg-[#242A3D] flex items-center justify-center">
+                <button class="relative w-8 h-8 bg-[#475569] border border-[#475569] rounded-lg hover:bg-[#334155] flex items-center justify-center">
                     🔔
-                    <span class="absolute -top-1 -right-1 bg-[#EA580C] text-white text-[10px] font-bold rounded-full px-1">{{ $stats['notificaciones'] ?? 0 }}</span>
+                    <span class="absolute -top-1 -right-1 bg-[#EA580C] text-white text-[10px] font-bold rounded-full px-1">{{ ($sidebarStats['pedidos_pendientes'] ?? 0) + ($sidebarStats['pagos_por_verificar'] ?? 0) + ($sidebarStats['alertas_stock'] ?? 0) }}</span>
                 </button>
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
-                    <button type="submit" class="ml-2 text-sm text-[#EA580C]">Logout</button>
+                    <button type="submit" title="Cerrar sesión" class="w-8 h-8 bg-[#475569] border border-[#475569] rounded-lg hover:bg-[#334155] flex items-center justify-center text-[#EA580C]">⏻</button>
                 </form>
             </div>
         </header>
 
-        <main class="pt-14 p-6 min-h-[calc(100vh-56px)]">
+        <main class="p-6 min-h-[calc(100vh-56px)]">
             @yield('content')
         </main>
     </div>
