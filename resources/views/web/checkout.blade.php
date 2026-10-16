@@ -84,7 +84,13 @@
           <div class="payment-method" :class="{ 'selected': metodo === 'transferencia' }" @click="metodo = 'transferencia'">
             <div class="payment-method-icon">🏦</div>
             <div class="payment-method-name">Transferencia bancaria</div>
-            <div class="payment-method-sub">Datos bancarios y pago móvil</div>
+            <div class="payment-method-sub">En bolívares a tasa BCV</div>
+          </div>
+
+          <div class="payment-method" :class="{ 'selected': metodo === 'pagomovil' }" @click="metodo = 'pagomovil'">
+            <div class="payment-method-icon">📱</div>
+            <div class="payment-method-name">Pago móvil</div>
+            <div class="payment-method-sub">En bolívares a tasa BCV</div>
           </div>
 
           <div class="payment-method" :class="{ 'selected': metodo === 'binance' }" @click="metodo = 'binance'">
@@ -107,12 +113,20 @@
           <div class="pay-data-row"><div class="pay-data-key">Tipo</div><div class="pay-data-val">Cuenta Corriente</div></div>
           <div class="pay-data-row"><div class="pay-data-key">Titular</div><div class="pay-data-val">Smartphone World C.A.</div></div>
           <div class="pay-data-row"><div class="pay-data-key">RIF</div><div class="pay-data-val">J-50123456-7</div></div>
-          <div class="pay-data-row"><div class="pay-data-key">Pago móvil</div><div class="pay-data-val">0414-1234567 · Banesco / Provincial</div></div>
+          <template x-if="tasa"><div class="pay-data-row"><div class="pay-data-key">Monto a transferir</div><div class="pay-data-val" style="font-weight:700" x-text="'Bs ' + bs(totalBs)"></div></div></template>
+        </div>
+
+        <div class="payment-detail-box" :class="{ 'active': metodo === 'pagomovil' }">
+          <div class="pay-data-row"><div class="pay-data-key">Teléfono</div><div class="pay-data-val">0414-1234567</div></div>
+          <div class="pay-data-row"><div class="pay-data-key">Banco</div><div class="pay-data-val">Banesco / Provincial</div></div>
+          <div class="pay-data-row"><div class="pay-data-key">RIF</div><div class="pay-data-val">J-50123456-7</div></div>
+          <template x-if="tasa"><div class="pay-data-row"><div class="pay-data-key">Monto a pagar</div><div class="pay-data-val" style="font-weight:700" x-text="'Bs ' + bs(totalBs)"></div></div></template>
         </div>
 
         <div class="payment-detail-box" :class="{ 'active': metodo === 'binance' }">
           <div class="pay-data-row"><div class="pay-data-key">Binance Pay ID</div><div class="pay-data-val">284910482</div></div>
           <div class="pay-data-row"><div class="pay-data-key">Moneda</div><div class="pay-data-val">USDT</div></div>
+          <div class="pay-data-row"><div class="pay-data-key">Monto a pagar</div><div class="pay-data-val" style="font-weight:700" x-text="total.toFixed(2) + ' USDT'"></div></div>
         </div>
 
         <div class="payment-detail-box" :class="{ 'active': metodo === 'fisico' }">
@@ -133,10 +147,49 @@
           <div class="security-note">El archivo se almacena de forma segura y solo el personal autorizado puede verificarlo.</div>
         </div>
 
-        <div class="form-group" x-show="metodo !== 'fisico'">
-          <label class="form-label" for="numero_referencia">Número de referencia bancaria o ID de transacción</label>
-          <input class="form-input" id="numero_referencia" type="text" name="numero_referencia" placeholder="Ej. 12345678" value="{{ old('numero_referencia') }}">
-          @error('numero_referencia')<div style="color:#EF4444;font-size:.8rem;margin-top:.3rem">{{ $message }}</div>@enderror
+        <input type="hidden" name="moneda_pagada" :value="esBs ? 'VES' : (metodo === 'binance' ? 'USDT' : '')">
+
+        <div x-show="metodo !== 'fisico'">
+          <div class="security-note" style="margin-bottom:.8rem" x-show="esBs">
+            Los datos de abajo se leen solos del comprobante. Escríbelos solo si quieres confirmarlos o si subiste un PDF.
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="monto_pagado" x-text="esBs ? 'Monto pagado (Bs)' : 'Monto pagado (USDT)'"></label>
+              <input class="form-input" id="monto_pagado" type="number" step="0.01" min="0" name="monto_pagado" value="{{ old('monto_pagado') }}" :placeholder="esBs ? (tasa ? bs(totalBs) : '') : total.toFixed(2)">
+              @error('monto_pagado')<div style="color:#EF4444;font-size:.8rem;margin-top:.3rem">{{ $message }}</div>@enderror
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="fecha_pago">Fecha del pago</label>
+              <input class="form-input" id="fecha_pago" type="date" name="fecha_pago" value="{{ old('fecha_pago') }}" max="{{ now()->toDateString() }}">
+              @error('fecha_pago')<div style="color:#EF4444;font-size:.8rem;margin-top:.3rem">{{ $message }}</div>@enderror
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="numero_referencia" x-text="esBs ? 'Número de operación' : 'ID de transacción'"></label>
+            <input class="form-input" id="numero_referencia" type="text" name="numero_referencia" inputmode="numeric" :placeholder="esBs ? 'Ej. 007693346569 (o sus últimos dígitos)' : 'Ej. 284910482'" value="{{ old('numero_referencia') }}">
+            @error('numero_referencia')<div style="color:#EF4444;font-size:.8rem;margin-top:.3rem">{{ $message }}</div>@enderror
+          </div>
+
+          <div class="form-row" x-show="esBs">
+            <div class="form-group">
+              <label class="form-label" for="banco_origen">Banco desde el que pagaste</label>
+              <select class="form-input" id="banco_origen" name="banco_origen">
+                <option value="">Seleccionar…</option>
+                @foreach(config('pagos.bancos') as $codigo => $nombre)
+                  <option value="{{ $codigo }} - {{ $nombre }}" @selected(old('banco_origen') === "$codigo - $nombre")>{{ $codigo }} - {{ $nombre }}</option>
+                @endforeach
+              </select>
+              @error('banco_origen')<div style="color:#EF4444;font-size:.8rem;margin-top:.3rem">{{ $message }}</div>@enderror
+            </div>
+            <div class="form-group" x-show="metodo === 'pagomovil'">
+              <label class="form-label" for="cedula_pagador">Cédula del pagador</label>
+              <input class="form-input" id="cedula_pagador" type="text" name="cedula_pagador" placeholder="Ej. V12345678" value="{{ old('cedula_pagador') }}">
+              @error('cedula_pagador')<div style="color:#EF4444;font-size:.8rem;margin-top:.3rem">{{ $message }}</div>@enderror
+            </div>
+          </div>
         </div>
 
         <div class="form-group">
@@ -159,6 +212,19 @@
           <span>Total</span>
           <span x-text="'$' + total.toFixed(2)"></span>
         </div>
+        <template x-if="tasa">
+          <div class="order-summary-item" style="font-weight:600">
+            <span>Total en bolívares</span>
+            <span x-text="'Bs ' + bs(totalBs)"></span>
+          </div>
+        </template>
+        <div style="color:var(--c-muted);font-size:.78rem;margin-top:.3rem">
+          @if($tasaBcv)
+            Tasa oficial BCV: Bs {{ number_format($tasaBcv, 2, ',', '.') }} por USD{{ $fechaTasa ? ' · vigente desde el ' . $fechaTasa->format('d/m/Y') : '' }}
+          @else
+            Tasa BCV no disponible: el monto en bolívares se confirmará al verificar el pago.
+          @endif
+        </div>
 
         <div class="panel" style="margin-top:1rem;background:var(--c-input)">
           <p style="color:var(--c-muted);font-size:.88rem;line-height:1.4">
@@ -176,6 +242,7 @@ function checkoutApp() {
   return {
     carrito: JSON.parse(localStorage.getItem('sw_carrito') || '[]'),
     metodo: 'transferencia',
+    tasa: {{ $tasaBcv ? (float) $tasaBcv : 'null' }},
     tipoEntrega: 'retiro',
     fileName: '',
     fileHint: '',
@@ -204,6 +271,9 @@ function checkoutApp() {
       }
     },
     get total() { return this.carrito.reduce((s,i) => s + i.precio * i.cantidad, 0); },
+    get totalBs() { return this.tasa ? Math.round(this.total * this.tasa * 100) / 100 : null; },
+    get esBs() { return this.metodo === 'transferencia' || this.metodo === 'pagomovil'; },
+    bs(n) { return n === null ? '' : Number(n).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
     onFileChange(e) {
       const f = e.target.files && e.target.files[0];
       if (f) {

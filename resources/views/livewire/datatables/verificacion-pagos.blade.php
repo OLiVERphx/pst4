@@ -3,18 +3,46 @@
     @forelse($payments as $payment)
         @php
             $meta = $payment->metadata_comprobante ?? [];
+            $coh = $meta['coherencia'] ?? [];
+            $ocr = ($meta['ocr']['disponible'] ?? false) ? $meta['ocr'] : null;
+            $auto = $meta['autocompletado'] ?? [];
+            $enBs = ($coh['moneda_comparada'] ?? null) === 'VES';
+            $bs = fn ($n) => $n === null ? '-' : 'Bs ' . number_format((float) $n, 2, ',', '.');
+            $metodos = ['transferencia' => 'Transferencia', 'pagomovil' => 'Pago móvil', 'binance' => 'Binance', 'fisico' => 'Efectivo'];
+
+            // ok: true = verificado, false = alerta, null = sin dato. "requerido" convierte el null en alerta.
             $checks = [
-                ['ok' => $meta['mime_valido'] ?? false, 'label' => 'Tipo MIME válido (imagen real)'],
-                ['ok' => $meta['tamano_valido'] ?? false, 'label' => 'Tamaño dentro del límite (5 MB)'],
-                ['ok' => $meta['exif_limpio'] ?? false, 'label' => ($meta['exif_limpio'] ?? false) ? 'Sin evidencia de edición (EXIF limpio)' : 'EXIF: posible edición detectada'],
-                ['ok' => $meta['hash_unico'] ?? false, 'label' => 'Hash único (sin duplicados)'],
-                ['ok' => $meta['no_duplicado'] ?? true, 'label' => 'No reutilizado en pedidos anteriores'],
-                // Coherencia declarada por el cliente
-                ['ok' => ($meta['coherencia']['monto_coincide'] ?? null), 'label' => 'Monto declarado coincide con el total del pedido'],
-                ['ok' => ($meta['coherencia']['fecha_valida'] ?? null), 'label' => 'Fecha de pago declarada plausible (no futura ni anterior a creación)'],
-                ['ok' => ($meta['coherencia']['referencia_unica'] ?? null), 'label' => 'Referencia no repetida en otros pedidos'],
+                ['ok' => $meta['mime_valido'] ?? false, 'label' => 'Tipo de archivo válido (imagen o PDF real)', 'requerido' => true],
+                ['ok' => $meta['tamano_valido'] ?? false, 'label' => 'Tamaño dentro del límite (5 MB)', 'requerido' => true],
+                ['ok' => $meta['exif_limpio'] ?? false, 'label' => ($meta['exif_limpio'] ?? false) ? 'Sin evidencia de edición (EXIF limpio)' : 'EXIF: posible edición detectada', 'requerido' => true],
+                ['ok' => $meta['hash_unico'] ?? false, 'label' => 'Archivo no subido antes (hash único)', 'requerido' => true],
+                ['ok' => $coh['monto_coincide'] ?? null, 'requerido' => true, 'label' => $enBs
+                    ? 'Monto en Bs = total × tasa BCV del día del pago' . (isset($coh['diferencia_pct']) ? ' (diferencia ' . number_format($coh['diferencia_pct'], 2, ',', '.') . ' %)' : '')
+                    : 'Monto pagado coincide con el total del pedido'],
+                ['ok' => $coh['fecha_valida'] ?? null, 'label' => 'Fecha de pago válida (no futura ni anterior al pedido)', 'requerido' => true],
+                ['ok' => $coh['referencia_unica'] ?? null, 'label' => 'Referencia no usada en otro pedido', 'requerido' => true],
+                ['ok' => $ocr ? (($coh['ocr_coincide'] ?? null) !== false) : null, 'requerido' => false, 'label' => ! $ocr
+                    ? 'Lectura automática no disponible: verificar a ojo' . (isset($meta['ocr']['motivo']) ? ' (' . $meta['ocr']['motivo'] . ')' : '')
+                    : (($coh['ocr_coincide'] ?? null) === false
+                        ? 'Lo declarado no coincide con el comprobante: ' . implode(', ', $coh['ocr_diferencias'] ?? [])
+                        : 'Datos leídos del comprobante (OCR)')],
             ];
-            $allOk = collect($checks)->every(fn($c) => $c['ok'] === true);
+            $alertas = collect($checks)->filter(fn ($c) => $c['ok'] === false || ($c['ok'] === null && $c['requerido']))->count();
+
+            // Filas de datos: valor guardado + valor leído en el comprobante si difiere
+            $filas = [
+                ['Monto pagado', $payment->monto_declarado !== null ? ($enBs ? $bs($payment->monto_declarado) : '$' . number_format($payment->monto_declarado, 2)) : '-',
+                    in_array('monto_declarado', $auto), ($ocr && $ocr['monto_bs'] !== null && $payment->monto_declarado !== null && abs($ocr['monto_bs'] - (float) $payment->monto_declarado) > 0.01) ? $bs($ocr['monto_bs']) : null],
+                ['Fecha del pago', $payment->fecha_pago_declarada?->format('d/m/Y') ?? '-',
+                    in_array('fecha_pago_declarada', $auto), ($ocr && $ocr['fecha'] && $payment->fecha_pago_declarada && $ocr['fecha'] !== $payment->fecha_pago_declarada->toDateString()) ? \Illuminate\Support\Carbon::parse($ocr['fecha'])->format('d/m/Y') : null],
+                ['N.º de operación', $payment->numero_referencia ?? '-',
+                    in_array('numero_referencia', $auto), ($ocr && $ocr['operacion'] && $payment->numero_referencia && ! str_ends_with($ocr['operacion'], preg_replace('/\D/', '', $payment->numero_referencia))) ? $ocr['operacion'] : null],
+                ['Banco de origen', $payment->banco_origen ?? '-', in_array('banco_origen', $auto), null],
+                ['Cédula del pagador', $payment->cedula_pagador ?? '-', in_array('cedula_pagador', $auto), null],
+            ];
+            if ($ocr && ! empty($ocr['nombre'])) {
+                $filas[] = ['Titular (comprobante)', $ocr['nombre'], true, null];
+            }
         @endphp
         <div class="bg-[#334155] border border-[#475569] rounded-xl p-5">
             <div class="flex items-start justify-between mb-4">
@@ -50,21 +78,41 @@
                 </div>
             @endif
 
+            <div class="bg-[#1E293B] border border-[#475569] rounded-lg p-3 mb-3 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-[#A0AEC0]">Total del pedido</span>
+                    <span class="text-[#34D399] font-bold">${{ number_format($payment->monto, 2) }}</span>
+                </div>
+                @if($enBs)
+                    <div class="flex justify-between mt-1">
+                        <span class="text-[#A0AEC0]">Debió pagar</span>
+                        <span class="text-[#F1F5F9] font-bold">{{ $bs($coh['monto_bs_esperado'] ?? null) }}</span>
+                    </div>
+                    <div class="text-[11px] text-[#A0AEC0] text-right mt-0.5">
+                        Tasa BCV {{ number_format($coh['tasa_bcv'] ?? 0, 2, ',', '.') }} Bs/USD del día del pago
+                    </div>
+                @elseif(in_array($payment->metodo, ['transferencia', 'pagomovil']))
+                    <div class="text-[11px] text-[#FB923C] text-right mt-1">Sin tasa BCV cargada: no se pudo calcular el monto en Bs</div>
+                @endif
+            </div>
+
             <div class="grid grid-cols-2 gap-y-2 text-sm mb-4">
                 <div class="text-[#A0AEC0]">Método</div>
-                <div class="text-[#F1F5F9] font-semibold text-right">{{ $payment->metodo }}</div>
-                <div class="text-[#A0AEC0]">Monto (servidor)</div>
-                <div class="text-[#34D399] font-bold text-right">${{ number_format($payment->monto, 2) }}</div>
-                <div class="text-[#A0AEC0]">Monto declarado</div>
-                <div class="text-[#F1F5F9] font-mono text-right">{{ isset($payment->monto_declarado) ? '$' . number_format($payment->monto_declarado, 2) : '-' }}</div>
-                <div class="text-[#A0AEC0]">Moneda declarada</div>
-                <div class="text-[#F1F5F9] text-right">{{ $payment->moneda_declarada ?? '-' }}</div>
-                <div class="text-[#A0AEC0]">Referencia</div>
-                <div class="text-[#F1F5F9] font-mono text-right">{{ $payment->numero_referencia ?? '-' }}</div>
-                <div class="text-[#A0AEC0]">Fecha declarada</div>
-                <div class="text-[#F1F5F9] text-right">{{ $payment->fecha_pago_declarada ? $payment->fecha_pago_declarada->format('Y-m-d') : '-' }}</div>
+                <div class="text-[#F1F5F9] font-semibold text-right">{{ $metodos[$payment->metodo] ?? $payment->metodo }}</div>
+                @foreach($filas as [$label, $valor, $leido, $enComprobante])
+                    <div class="text-[#A0AEC0]">{{ $label }}</div>
+                    <div class="text-right">
+                        <span class="text-[#F1F5F9] font-mono">{{ $valor }}</span>
+                        @if($leido)
+                            <div class="text-[10px] text-[#60A5FA]">leído del comprobante</div>
+                        @endif
+                        @if($enComprobante)
+                            <div class="text-[11px] text-[#FB923C]">comprobante: {{ $enComprobante }}</div>
+                        @endif
+                    </div>
+                @endforeach
                 <div class="text-[#A0AEC0]">Subido</div>
-                <div class="text-[#F1F5F9] text-right">{{ $payment->created_at->format('Y-m-d H:i') }}</div>
+                <div class="text-[#F1F5F9] text-right">{{ $payment->created_at->format('d/m/Y H:i') }}</div>
             </div>
 
             <div class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wide mb-2">
@@ -72,10 +120,11 @@
             </div>
             <div class="space-y-1.5 mb-4">
                 @foreach($checks as $c)
+                    @php $alerta = $c['ok'] === false || ($c['ok'] === null && $c['requerido']); @endphp
                     <div class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm
-                        {{ $c['ok'] ? 'bg-[#059669]/10 text-[#34D399]' : 'bg-[#EA580C]/10 text-[#FB923C]' }}">
-                        <span>{{ $c['ok'] ? '✅' : '⚠️' }}</span>
-                        <span>{{ $c['label'] }}</span>
+                        {{ $c['ok'] === true ? 'bg-[#059669]/10 text-[#34D399]' : ($alerta ? 'bg-[#EA580C]/10 text-[#FB923C]' : 'bg-[#475569]/40 text-[#A0AEC0]') }}">
+                        <span>{{ $c['ok'] === true ? '✅' : ($alerta ? '⚠️' : '➖') }}</span>
+                        <span>{{ $c['label'] }}{{ $c['ok'] === null && $c['requerido'] ? ' — sin dato' : '' }}</span>
                     </div>
                 @endforeach
             </div>
@@ -91,11 +140,11 @@
                 </button>
             </div>
 
-            @unless($allOk)
+            @if($alertas > 0)
                 <div class="text-[12px] text-[#FB923C] mt-2 text-center">
-                    ⚠️ Se detectaron alertas. Revisa antes de aprobar.
+                    ⚠️ {{ $alertas }} {{ $alertas === 1 ? 'alerta' : 'alertas' }}. Revisa el comprobante antes de aprobar.
                 </div>
-            @endunless
+            @endif
         </div>
     @empty
         <div class="col-span-2 text-center py-16 text-[#A0AEC0]">

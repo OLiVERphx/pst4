@@ -38,7 +38,7 @@ class OcrComprobanteTest extends TestCase
         $this->assertSame('2026-10-16', $c['fecha']);
         $this->assertSame('001122334455', $c['operacion']);
         $this->assertSame('12345678', $c['identificacion']);
-        $this->assertSame('0102 - BANCO DE VENEZUELA', $c['banco']);
+        $this->assertSame('0102 - Banco de Venezuela', $c['banco']);
     }
 
     #[Test]

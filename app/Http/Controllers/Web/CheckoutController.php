@@ -12,6 +12,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Services\ServicioInventario;
 use App\Services\ServicioValidacionPagos;
+use App\Services\ServicioPrecios;
 use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
@@ -20,7 +21,9 @@ class CheckoutController extends Controller
     public function index()
     {
         $user = auth()->user();
-        return view('web.checkout', compact('user'));
+        $tasaBcv = ServicioPrecios::tasaBcvEn(now());
+        $fechaTasa = \App\Models\TasaBcv::vigenteEn()?->fecha;
+        return view('web.checkout', compact('user', 'tasaBcv', 'fechaTasa'));
     }
 
     /**
@@ -101,9 +104,11 @@ class CheckoutController extends Controller
             'metodo_pago'       => 'required|in:transferencia,pagomovil,binance,fisico',
             'comprobante'       => 'nullable|file|mimes:jpeg,jpg,png,pdf|max:5120',
             'numero_referencia' => 'nullable|string|max:100',
-            'fecha_pago'        => 'nullable|date_format:'.config('pagos.fecha_format','Y-m-d'),
+            'fecha_pago'        => 'nullable|date_format:'.config('pagos.fecha_format','Y-m-d').'|before_or_equal:today',
             'monto_pagado'      => 'nullable|numeric|min:0',
-            'moneda_pagada'     => 'nullable|string|max:5',
+            'moneda_pagada'     => 'nullable|in:VES,USD,USDT',
+            'banco_origen'      => 'nullable|string|max:60',
+            'cedula_pagador'    => ['nullable', 'string', 'max:15', 'regex:/^[VEJGPvejgp]?-?\d{6,9}$/'],
         ]);
 
         // Regla de negocio: no se permite pago en efectivo con entrega a domicilio
@@ -158,6 +163,8 @@ class CheckoutController extends Controller
                 'fecha_pago_declarada' => $request->fecha_pago ? \Carbon\Carbon::createFromFormat(config('pagos.fecha_format','Y-m-d'), $request->fecha_pago) : null,
                 'moneda'           => 'USD',
                 'numero_referencia'=> $request->numero_referencia,
+                'banco_origen'     => $request->banco_origen,
+                'cedula_pagador'   => $request->cedula_pagador ? strtoupper(str_replace('-', '', $request->cedula_pagador)) : null,
                 'estado'           => 'pendiente',
             ]);
 

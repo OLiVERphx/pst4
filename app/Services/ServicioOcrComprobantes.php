@@ -101,7 +101,8 @@ class ServicioOcrComprobantes
         }
 
         if (preg_match('/\b(01\d{2}|0[2-9]\d{2})\s*[-–—]\s*([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ .]{2,})/u', $t, $m)) {
-            $campos['banco'] = $m[1] . ' - ' . trim($m[2]);
+            // Con el código basta: el nombre se toma de la lista oficial (el OCR lo deforma más)
+            $campos['banco'] = $m[1] . ' - ' . (config("pagos.bancos.{$m[1]}") ?? trim($m[2]));
         }
 
         if (preg_match('/Nombre\s*:?\s*([^\n\r]{3,80})/iu', $t, $m)) {

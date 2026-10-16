@@ -55,4 +55,18 @@ class TasaBcvTest extends TestCase
             ->assertOk()
             ->assertSee('Vigente desde');
     }
+
+    #[Test]
+    public function el_checkout_muestra_la_tasa_bcv_vigente()
+    {
+        $this->seed();
+        ServicioPrecios::registrarTasaBcv(52.75, now());
+        $cliente = User::where('email', '!=', 'admin@swworld.com')->firstOrFail();
+
+        $this->actingAs($cliente)->get(route('web.checkout'))
+            ->assertOk()
+            ->assertSee('Pago móvil')
+            ->assertSee('Tasa oficial BCV: Bs 52,75 por USD')
+            ->assertSee('tasa: 52.75', false);
+    }
 }
