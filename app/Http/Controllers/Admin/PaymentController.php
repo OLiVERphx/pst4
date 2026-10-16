@@ -16,11 +16,11 @@ class PaymentController extends Controller
 
     public function receipt(Payment $payment)
     {
-        $path = storage_path('app/' . $payment->ruta_comprobante);
-        if (!file_exists($path)) {
+        // ruta_comprobante es relativa al disco 'local' (storage/app/private)
+        $disk = Storage::disk('local');
+        if (!$payment->ruta_comprobante || !$disk->exists($payment->ruta_comprobante)) {
             abort(404);
         }
-        // For now, stream file directly (private storage)
-        return response()->file($path);
+        return response()->file($disk->path($payment->ruta_comprobante));
     }
 }

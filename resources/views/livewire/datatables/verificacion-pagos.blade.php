@@ -22,12 +22,33 @@
                     <div class="font-bold text-[#F1F5F9]">Pedido {{ $payment->order?->numero_pedido ?? '-' }}</div>
                     <div class="text-xs text-[#A0AEC0] mt-0.5">{{ $payment->order?->user?->name ?? '-' }}</div>
                 </div>
-                <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#EA580C]/10 text-[#FB923C]">Pendiente</span>
+                @if($payment->estado === 'sospechoso')
+                    <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#DC2626]/15 text-[#F87171]">Sospechoso</span>
+                @else
+                    <span class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#EA580C]/10 text-[#FB923C]">Pendiente</span>
+                @endif
             </div>
 
-            <div class="bg-[#475569] border border-[#475569] rounded-lg h-28 flex items-center justify-center mb-4">
-                <span class="text-4xl opacity-50">📄</span>
-            </div>
+            @if($payment->ruta_comprobante)
+                @php $receiptUrl = route('admin.payments.receipt', $payment); @endphp
+                <a href="{{ $receiptUrl }}" target="_blank" rel="noopener"
+                   class="block bg-[#475569] border border-[#475569] rounded-lg mb-4 overflow-hidden hover:border-[#94A3B8]"
+                   title="Abrir comprobante en tamaño completo">
+                    @if(str_starts_with($meta['mime'] ?? '', 'image/'))
+                        <img src="{{ $receiptUrl }}" alt="Comprobante del pedido {{ $payment->order?->numero_pedido }}"
+                             class="w-full h-64 object-contain bg-[#1E293B]" loading="lazy">
+                    @else
+                        <div class="h-28 flex flex-col items-center justify-center gap-1 text-[#F1F5F9]">
+                            <span class="text-4xl">📄</span>
+                            <span class="text-xs text-[#A0AEC0]">Ver PDF del comprobante</span>
+                        </div>
+                    @endif
+                </a>
+            @else
+                <div class="bg-[#475569] border border-[#475569] rounded-lg h-28 flex items-center justify-center mb-4 text-sm text-[#FB923C]">
+                    Sin comprobante adjunto
+                </div>
+            @endif
 
             <div class="grid grid-cols-2 gap-y-2 text-sm mb-4">
                 <div class="text-[#A0AEC0]">Método</div>

@@ -43,7 +43,7 @@ class ServicioDashboard
         $pedidosPendientes = Order::where('estado', 'pendiente')->count();
 
         // Pagos por verificar
-        $pagosPorVerificar = Payment::where('estado', 'pendiente')->count();
+        $pagosPorVerificar = Payment::whereIn('estado', ['pendiente', 'sospechoso'])->count();
 
         // Cantidad de productos con stock <= stock_minimo
         $cantidadStockBajo = Product::whereColumn('stock', '<=', 'stock_minimo')->count();

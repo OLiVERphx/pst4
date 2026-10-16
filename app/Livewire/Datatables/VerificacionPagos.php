@@ -21,7 +21,8 @@ class VerificacionPagos extends Component
 
     public function render()
     {
-        $payments = Payment::where('estado', 'pendiente')->with('order.user')->get();
+        // Los sospechosos (monto no coincide) también requieren decisión del admin
+        $payments = Payment::whereIn('estado', ['pendiente', 'sospechoso'])->with('order.user')->get();
         return view('livewire.datatables.verificacion-pagos', ['payments' => $payments]);
     }
 

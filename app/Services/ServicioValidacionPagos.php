@@ -180,7 +180,8 @@ class ServicioValidacionPagos
         $uuid = Str::uuid()->toString();
         $ext = $file->getClientOriginalExtension() ?: ($check['mime'] === 'application/pdf' ? 'pdf' : 'jpg');
         $filename = $uuid . '.' . $ext;
-        $dir = 'private/receipts/' . $payment->pedido_id;
+        // El disco 'local' ya apunta a storage/app/private
+        $dir = 'receipts/' . $payment->pedido_id;
         Storage::disk('local')->putFileAs($dir, $file, $filename);
         $path = $dir . '/' . $filename;
 
