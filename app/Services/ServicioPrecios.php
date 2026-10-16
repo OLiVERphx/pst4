@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Models\Configuracion;
+use App\Models\TasaBcv;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Services\ServicioAuditoria;
@@ -120,18 +122,64 @@ class ServicioPrecios
      */
     public static function convertirFromUsd(float $amount, string $to = 'bs'): ?float
     {
-        $config = Configuracion::instance();
-        if ($to === 'bs') {
-            $tasa = $config?->tasa_bcv;
-        } else {
-            $tasa = $config?->tasa_binance;
-        }
+        $tasa = $to === 'bs'
+            ? self::tasaBcvEn(now())
+            : Configuracion::instance()?->tasa_binance;
 
         if (! $tasa || $tasa <= 0) {
             return null; // tasa no disponible
         }
 
         return (float) bcmul((string)$amount, (string)$tasa, 2);
+    }
+
+    /**
+     * Tasa BCV (Bs por USD) vigente en una fecha. Usa el historial tasas_bcv y,
+     * si aún no hay historial, la tasa cargada en Configuración.
+     */
+    public static function tasaBcvEn($fecha): ?float
+    {
+        $registro = TasaBcv::vigenteEn($fecha);
+        if ($registro) {
+            return (float) $registro->tasa;
+        }
+
+        $config = Configuracion::instance()?->tasa_bcv;
+        return $config ? (float) $config : null;
+    }
+
+    /**
+     * Registra (o corrige) la tasa BCV de un día en el historial y, si es la más
+     * reciente, la deja también como tasa vigente en Configuración. Audita el cambio.
+     */
+    public static function registrarTasaBcv(float $tasa, $fecha, string $fuente = 'manual', ?int $userId = null): TasaBcv
+    {
+        return DB::transaction(function () use ($tasa, $fecha, $fuente, $userId) {
+            $dia = Carbon::parse($fecha)->toDateString();
+            $registro = TasaBcv::whereDate('fecha', $dia)->first();
+            $antes = $registro?->toArray();
+
+            $registro ??= new TasaBcv(['fecha' => $dia]);
+            $registro->fill(['tasa' => $tasa, 'fuente' => $fuente, 'registrado_por' => $userId])->save();
+
+            $esLaMasReciente = ! TasaBcv::whereDate('fecha', '>', $dia)->exists();
+            if ($esLaMasReciente) {
+                $config = Configuracion::instance();
+                if ($config) {
+                    $config->update(['tasa_bcv' => $tasa]);
+                } else {
+                    Configuracion::create([
+                        'minimo_compra_mayor_usd' => 50.00,
+                        'minimo_unidades_mayor' => 10,
+                        'tasa_bcv' => $tasa,
+                    ]);
+                }
+            }
+
+            ServicioAuditoria::registrar('configuracion.tasa_bcv_registrada', $registro, $antes, $registro->toArray(), $userId);
+
+            return $registro;
+        });
     }
 
     /**
@@ -172,28 +220,14 @@ class ServicioPrecios
                 return null;
             }
 
-            // Guardar en configuración y auditar dentro de una transacción
-            return DB::transaction(function () use ($rate) {
-                $config = Configuracion::instance();
-                $antes = $config ? $config->toArray() : null;
+            // DolarApi informa cuándo se actualizó la tasa; si no viene, se asume hoy
+            $fecha = isset($data['fechaActualizacion'])
+                ? Carbon::parse($data['fechaActualizacion'])->setTimezone(config('app.timezone'))
+                : now();
 
-                if (! $config) {
-                    $config = Configuracion::create([
-                        'minimo_compra_mayor_usd' => 50.00,
-                        'minimo_unidades_mayor' => 10,
-                        'tasa_bcv' => $rate,
-                    ]);
+            self::registrarTasaBcv($rate, $fecha, 'dolarapi');
 
-                    ServicioAuditoria::registrar('configuracion.tasa_bcv_creada', $config, $antes, $config->toArray());
-                } else {
-                    $config->tasa_bcv = $rate;
-                    $config->save();
-
-                    ServicioAuditoria::registrar('configuracion.tasa_bcv_actualizada', $config, $antes, $config->toArray());
-                }
-
-                return (float) $rate;
-            });
+            return (float) $rate;
         } catch (Throwable $e) {
             Log::error('Error actualizando tasa BCV desde DolarApi VE: ' . $e->getMessage());
             return null;

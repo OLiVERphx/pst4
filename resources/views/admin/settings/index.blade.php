@@ -6,6 +6,12 @@
 <div class="container mx-auto py-6">
     <h1 class="text-2xl font-semibold mb-4 text-[#F1F5F9]">Configuración</h1>
 
+    @if (session('success'))
+        <div class="mb-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-200">
+            {{ session('success') }}
+        </div>
+    @endif
+
     @if ($errors->any())
         <div class="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-200">
             <ul>
@@ -89,8 +95,24 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm text-[#A0AEC0] mb-1">Tasa BCV</label>
+                    <label class="block text-sm text-[#A0AEC0] mb-1">Tasa BCV (Bs por USD)</label>
                     <input type="number" step="any" name="tasa_bcv" value="{{ old('tasa_bcv', $config->tasa_bcv ?? '') }}" class="w-full bg-[#475569] border border-[#384457] rounded-lg px-3 py-2 text-sm text-[#F1F5F9]" />
+                    @php $ultimaTasa = \App\Models\TasaBcv::vigenteEn(); @endphp
+                    <p class="text-xs text-[#A0AEC0] mt-1">
+                        @if($ultimaTasa)
+                            Vigente desde {{ $ultimaTasa->fecha->format('d/m/Y') }} ({{ $ultimaTasa->fuente === 'dolarapi' ? 'automática' : 'manual' }}). Se actualiza sola cada hora.
+                        @else
+                            Aún no hay historial de tasas: carga la de hoy.
+                        @endif
+                    </p>
+                    @error('tasa_bcv')<p class="text-xs text-[#F87171] mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm text-[#A0AEC0] mb-1">Fecha de la tasa BCV</label>
+                    <input type="date" name="fecha_tasa_bcv" value="{{ old('fecha_tasa_bcv', now()->toDateString()) }}" max="{{ now()->toDateString() }}" class="w-full bg-[#475569] border border-[#384457] rounded-lg px-3 py-2 text-sm text-[#F1F5F9]" />
+                    <p class="text-xs text-[#A0AEC0] mt-1">Solo cámbiala para corregir la tasa de un día anterior.</p>
+                    @error('fecha_tasa_bcv')<p class="text-xs text-[#F87171] mt-1">{{ $message }}</p>@enderror
                 </div>
 
                 <div>

@@ -7,18 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Configuracion;
 use App\Services\ServicioAuditoria;
+use App\Services\ServicioPrecios;
 
 /**
  * Controlador para la edición de parámetros globales del sistema.
- * Sólo usuarios con permiso 'configuracion.editar' pueden actualizar.
+ * El permiso 'configuracion.editar' se exige en la ruta (routes/web.php).
  */
 class ConfiguracionController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('permission:configuracion.editar')->only(['update']);
-    }
-
     /**
      * Actualiza la configuración global.
      */
@@ -27,9 +23,15 @@ class ConfiguracionController extends Controller
         $data = $request->validate([
             'minimo_compra_mayor_usd' => 'nullable|numeric|min:0',
             'minimo_unidades_mayor' => 'nullable|integer|min:0',
-            'tasa_bcv' => 'nullable|numeric|min:0',
+            'tasa_bcv' => 'nullable|numeric|gt:0',
+            'fecha_tasa_bcv' => 'nullable|date|before_or_equal:today',
             'tasa_binance' => 'nullable|numeric|min:0',
         ]);
+
+        // La tasa BCV va al historial por fecha (para validar pagos en Bs con la tasa del día del pago)
+        $tasaBcv = $data['tasa_bcv'] ?? null;
+        $fechaTasa = $data['fecha_tasa_bcv'] ?? now()->toDateString();
+        unset($data['tasa_bcv'], $data['fecha_tasa_bcv']);
 
         $config = Configuracion::first();
         $antes = $config ? $config->toArray() : null;
@@ -41,9 +43,12 @@ class ConfiguracionController extends Controller
             $config->save();
         }
 
-        // Registrar auditoría si hubo cambios
         ServicioAuditoria::registrar('configuracion.actualizada', $config, $antes, $config->toArray());
 
-        return response()->json(['message' => 'Configuración actualizada correctamente', 'config' => $config]);
+        if ($tasaBcv !== null && (float) $tasaBcv !== (float) ServicioPrecios::tasaBcvEn($fechaTasa)) {
+            ServicioPrecios::registrarTasaBcv((float) $tasaBcv, $fechaTasa, 'manual', Auth::id());
+        }
+
+        return back()->with('success', 'Configuración actualizada correctamente');
     }
 }
