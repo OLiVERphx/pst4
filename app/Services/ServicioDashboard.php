@@ -25,8 +25,8 @@ class ServicioDashboard
         $startOfMonth = $now->copy()->startOfMonth();
         $endOfMonth = $now->copy()->endOfMonth();
 
-        // Ventas del mes (pedidos entregados)
-        $totalVentasMes = Order::where('estado', 'entregado')
+        // Ventas del mes (pedidos con pago confirmado)
+        $totalVentasMes = Order::whereIn('estado', Order::ESTADOS_PAGADOS)
             ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
             ->sum('total');
 
@@ -48,12 +48,12 @@ class ServicioDashboard
         // Cantidad de productos con stock <= stock_minimo
         $cantidadStockBajo = Product::whereColumn('stock', '<=', 'stock_minimo')->count();
 
-        // Ventas por categoría (sumando subtotal de items de pedidos entregados)
+        // Ventas por categoría (sumando subtotal de items de pedidos con pago confirmado)
         $ventasPorCategoria = DB::table('items_pedido')
             ->join('products', 'items_pedido.producto_id', '=', 'products.id')
             ->join('categorias', 'products.categoria_id', '=', 'categorias.id')
             ->join('pedidos', 'items_pedido.pedido_id', '=', 'pedidos.id')
-            ->whereIn('pedidos.estado', ['entregado','pago_verificado','procesando','enviado'])
+            ->whereIn('pedidos.estado', Order::ESTADOS_PAGADOS)
             ->select('categorias.nombre as categoria', DB::raw('SUM(items_pedido.subtotal) as total'))
             ->groupBy('categorias.id', 'categorias.nombre')
             ->orderByDesc('total')
@@ -69,7 +69,7 @@ class ServicioDashboard
         for ($i = 0; $i < 8; $i++) {
             $weekStart = $startWeek->copy()->addWeeks($i)->startOfWeek();
             $weekEnd = $weekStart->copy()->endOfWeek();
-            $sum = Order::where('estado', 'entregado')
+            $sum = Order::whereIn('estado', Order::ESTADOS_PAGADOS)
                 ->whereBetween('created_at', [$weekStart, $weekEnd])
                 ->sum('total');
             $ventasSemanales[] = [

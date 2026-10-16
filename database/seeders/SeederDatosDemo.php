@@ -37,12 +37,13 @@ class SeederDatosDemo extends Seeder
 
         // Orders specification
         $ordersSpec = [
-            ['estado' => 'entregado', 'tipo' => 'detal', 'items' => 3],
-            ['estado' => 'entregado', 'tipo' => 'detal', 'items' => 2],
-            ['estado' => 'pago_verificado', 'tipo' => 'mayor', 'items' => 5],
-            ['estado' => 'pago_subido', 'tipo' => 'detal', 'items' => 1],
-            ['estado' => 'pendiente', 'tipo' => 'detal', 'items' => 2],
-            ['estado' => 'cancelado', 'tipo' => 'detal', 'items' => 1],
+            // Estados del flujo actual (ver ServicioPedidos::obtenerFlujoParaPedido)
+            ['estado' => 'entregado', 'tipo' => 'detal', 'items' => 3, 'tipo_entrega' => 'delivery'],
+            ['estado' => 'completado', 'tipo' => 'detal', 'items' => 2, 'tipo_entrega' => 'retiro'],
+            ['estado' => 'pago_confirmado_retirar', 'tipo' => 'mayor', 'items' => 5, 'tipo_entrega' => 'retiro'],
+            ['estado' => 'pago_subido', 'tipo' => 'detal', 'items' => 1, 'tipo_entrega' => 'retiro'],
+            ['estado' => 'pendiente', 'tipo' => 'detal', 'items' => 2, 'tipo_entrega' => 'retiro'],
+            ['estado' => 'cancelado', 'tipo' => 'detal', 'items' => 1, 'tipo_entrega' => 'retiro'],
         ];
 
         foreach ($ordersSpec as $spec) {
@@ -53,6 +54,7 @@ class SeederDatosDemo extends Seeder
                 'usuario_id' => $client->id,
                 'tipo' => $spec['tipo'],
                 'estado' => $spec['estado'],
+                'tipo_entrega' => $spec['tipo_entrega'],
                 'subtotal' => 0,
                 'descuento' => 0,
                 'total' => 0,
@@ -91,7 +93,8 @@ class SeederDatosDemo extends Seeder
             $order->save();
 
             // Payments for certain states
-            if (in_array($spec['estado'], ['pago_subido', 'pago_verificado'])) {
+            if ($spec['estado'] !== 'pendiente' && $spec['estado'] !== 'cancelado') {
+                $pagado = $spec['estado'] !== 'pago_subido';
                 $metodos = ['transferencia', 'binance', 'pagomovil'];
                 $metodo = $metodos[array_rand($metodos)];
 
@@ -104,9 +107,9 @@ class SeederDatosDemo extends Seeder
                     'ruta_comprobante' => null,
                     'hash_comprobante' => null,
                     'metadata_comprobante' => [],
-                    'estado' => $spec['estado'] === 'pago_subido' ? 'pendiente' : 'valido',
-                    'verificado_por' => $spec['estado'] === 'pago_verificado' ? ($admin->id ?? null) : null,
-                    'verificado_en' => $spec['estado'] === 'pago_verificado' ? $now : null,
+                    'estado' => $pagado ? 'valido' : 'pendiente',
+                    'verificado_por' => $pagado ? ($admin->id ?? null) : null,
+                    'verificado_en' => $pagado ? $now : null,
                     'motivo_rechazo' => null,
                 ]);
             }

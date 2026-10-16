@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Order;
 use App\Services\ServicioPedidos;
+use App\Services\ServicioValidacionPagos;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -80,14 +81,28 @@ class OrdersTable extends Component
         $pos = array_search($order->estado, $flow, true);
         $next = ($pos !== false && isset($flow[$pos + 1])) ? $flow[$pos + 1] : null;
 
+        // ¿Este paso confirma el pago? (pago online confirmado, o venta en tienda completada)
+        $payment = $order->payment;
+        $confirmaPago = $next && (
+            in_array($next, ['pago_confirmado', 'pago_confirmado_retirar'], true)
+            || ($next === 'completado' && $payment?->metodo === 'fisico')
+        );
+
         // Si la transición aprueba o confirma un pago, exigir permiso específico pagos.aprobar
-        if ($next && in_array($next, ['pago_confirmado', 'pago_confirmado_retirar'])) {
+        if ($confirmaPago) {
             Gate::authorize('pagos.aprobar');
         } else {
             Gate::authorize('pedidos.ver');
         }
 
-        $updated = $service->avanzarEstado($order, Auth::user());
+        if ($confirmaPago && $payment && $payment->estado !== 'valido') {
+            // Mismo camino que "Aprobar pago" en Verificar Pagos: el pago queda válido
+            // (con auditoría) y el pedido pasa a pago confirmado.
+            app(ServicioValidacionPagos::class)->approve($payment, Auth::user());
+            $updated = $order->fresh();
+        } else {
+            $updated = $service->avanzarEstado($order, Auth::user());
+        }
         if ($this->selectedOrder && $this->selectedOrder->id === $order->id) {
             $this->selectedOrder = $updated->load('items.product', 'user', 'payment');
         }

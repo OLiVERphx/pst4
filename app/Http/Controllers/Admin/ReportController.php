@@ -31,7 +31,7 @@ class ReportController extends Controller
         $lowStock = Product::whereColumn('stock', '<=', 'stock_minimo')->get()->toArray();
 
         // Estados considerados como pedidos "pagados/entregados" (reutilizar)
-        $paidStatuses = ['entregado','pago_verificado','procesando','enviado'];
+        $paidStatuses = \App\Models\Order::ESTADOS_PAGADOS;
 
         // Ventas por categoría (mismo criterio que dashboard)
         $ventasPorCategoria = DB::table('items_pedido')
@@ -235,7 +235,7 @@ class ReportController extends Controller
                 // reproducir la consulta de proyección (30 días)
                 $now = \Carbon\Carbon::now();
                 $thirtyDaysAgo = $now->copy()->subDays(30);
-                $paidStatuses = ['entregado','pago_verificado','procesando','enviado'];
+                $paidStatuses = \App\Models\Order::ESTADOS_PAGADOS;
 
                 $productSalesLast30 = DB::table('items_pedido')
                     ->join('pedidos', 'items_pedido.pedido_id', '=', 'pedidos.id')
@@ -307,7 +307,7 @@ class ReportController extends Controller
                     ->join('products', 'items_pedido.producto_id', '=', 'products.id')
                     ->join('categorias', 'products.categoria_id', '=', 'categorias.id')
                     ->join('pedidos', 'items_pedido.pedido_id', '=', 'pedidos.id')
-                    ->whereIn('pedidos.estado', ['entregado','pago_verificado','procesando','enviado'])
+                    ->whereIn('pedidos.estado', \App\Models\Order::ESTADOS_PAGADOS)
                     ->select('categorias.nombre as categoria', DB::raw('SUM(items_pedido.subtotal) as total'))
                     ->groupBy('categorias.id','categorias.nombre')
                     ->orderByDesc('total')
@@ -360,7 +360,7 @@ class ReportController extends Controller
                     ->join('products', 'items_pedido.producto_id', '=', 'products.id')
                     ->join('categorias', 'products.categoria_id', '=', 'categorias.id')
                     ->join('pedidos', 'items_pedido.pedido_id', '=', 'pedidos.id')
-                    ->whereIn('pedidos.estado', ['entregado','pago_verificado','procesando','enviado'])
+                    ->whereIn('pedidos.estado', \App\Models\Order::ESTADOS_PAGADOS)
                     ->select('categorias.nombre as categoria', DB::raw('SUM(items_pedido.subtotal) as total'))
                     ->groupBy('categorias.id','categorias.nombre')
                     ->orderByDesc('total')

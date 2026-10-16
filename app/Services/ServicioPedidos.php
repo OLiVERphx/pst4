@@ -204,14 +204,18 @@ class ServicioPedidos
 
     /**
      * Lleva el pedido directamente al estado de pago confirmado de su flujo
-     * (pago_confirmado o pago_confirmado_retirar). Se usa al aprobar un pago:
+     * (pago_confirmado, pago_confirmado_retirar o, en pago en tienda, completado).
+     * Se usa al aprobar un pago:
      * no tiene sentido dejarlo en un paso intermedio. Si el pedido ya está en
      * ese estado o más adelante, no lo retrocede.
      */
     public function confirmarPago(Order $order, User $admin): Order
     {
         $flow = $this->obtenerFlujoParaPedido($order);
-        $objetivo = collect($flow)->first(fn ($e) => str_starts_with($e, 'pago_confirmado'));
+        // Pago en tienda (venta local o retiro + efectivo): no hay estado intermedio,
+        // el pago se cobra al entregar y la venta queda completada.
+        $objetivo = collect($flow)->first(fn ($e) => str_starts_with($e, 'pago_confirmado'))
+            ?? (in_array('completado', $flow, true) ? 'completado' : null);
         $pos = array_search($order->estado, $flow, true);
 
         if ($objetivo === null || $pos === false || $pos >= array_search($objetivo, $flow, true)) {

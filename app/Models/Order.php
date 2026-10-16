@@ -18,6 +18,16 @@ class Order extends Model
 
     protected $table = 'pedidos';
 
+    /**
+     * Estados en los que el pago del pedido ya está confirmado: cuentan como venta
+     * en el dashboard y los reportes. Incluye estados del flujo anterior
+     * (pago_verificado, procesando, enviado) para no perder datos históricos.
+     */
+    public const ESTADOS_PAGADOS = [
+        'pago_confirmado', 'pago_confirmado_retirar', 'en_camino', 'entregado', 'completado',
+        'pago_verificado', 'procesando', 'enviado',
+    ];
+
     protected $fillable = [
         'numero_pedido',
         'usuario_id',
