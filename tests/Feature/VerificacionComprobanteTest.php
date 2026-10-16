@@ -66,6 +66,8 @@ class VerificacionComprobanteTest extends TestCase
             ->call('approve', $payment->id);
 
         $this->assertEquals('valido', $payment->fresh()->estado);
+        // Retiro + pago online: aprobar lleva el pedido directo a pago confirmado
+        $this->assertEquals('pago_confirmado_retirar', $payment->order->fresh()->estado);
     }
 
     #[Test]

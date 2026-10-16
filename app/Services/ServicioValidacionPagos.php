@@ -259,7 +259,7 @@ class ServicioValidacionPagos
         try {
             $pedidoService = app(ServicioPedidos::class);
             if ($payment->order) {
-                $pedidoService->avanzarEstado($payment->order, $admin);
+                $pedidoService->confirmarPago($payment->order, $admin);
             }
         } catch (\Throwable $e) {
             Log::error('Error advancing order after payment approval: ' . $e->getMessage());

@@ -198,7 +198,32 @@ class ServicioPedidos
         }
 
         $nextPos = min($pos + 1, count($flow) - 1);
-        $next = $flow[$nextPos];
+
+        return $this->aplicarEstado($order, $flow[$nextPos], $admin);
+    }
+
+    /**
+     * Lleva el pedido directamente al estado de pago confirmado de su flujo
+     * (pago_confirmado o pago_confirmado_retirar). Se usa al aprobar un pago:
+     * no tiene sentido dejarlo en un paso intermedio. Si el pedido ya está en
+     * ese estado o más adelante, no lo retrocede.
+     */
+    public function confirmarPago(Order $order, User $admin): Order
+    {
+        $flow = $this->obtenerFlujoParaPedido($order);
+        $objetivo = collect($flow)->first(fn ($e) => str_starts_with($e, 'pago_confirmado'));
+        $pos = array_search($order->estado, $flow, true);
+
+        if ($objetivo === null || $pos === false || $pos >= array_search($objetivo, $flow, true)) {
+            return $order;
+        }
+
+        return $this->aplicarEstado($order, $objetivo, $admin);
+    }
+
+    private function aplicarEstado(Order $order, string $next, User $admin): Order
+    {
+        $current = $order->estado;
 
         $antes = [
             'estado' => $current,
@@ -210,7 +235,7 @@ class ServicioPedidos
             $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first() ?? $order;
             $lockedOrder->estado = $next;
 
-            if ($next === 'procesando') {
+            if (str_starts_with($next, 'pago_confirmado')) {
                 $lockedOrder->confirmado_por = $admin->id;
                 $lockedOrder->confirmado_en = Carbon::now();
             }
