@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\User;
@@ -20,7 +21,7 @@ class ReportsTest extends TestCase
         Permission::firstOrCreate(['name' => 'pagos.ver']);
     }
 
-    /** @test */
+    #[Test]
     public function authorized_user_can_view_reports()
     {
         $user = User::factory()->create();
@@ -32,7 +33,7 @@ class ReportsTest extends TestCase
         $response->assertViewIs('admin.reports.index');
     }
 
-    /** @test */
+    #[Test]
     public function unauthorized_user_gets_forbidden()
     {
         $user = User::factory()->create();
@@ -43,7 +44,7 @@ class ReportsTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
+    #[Test]
     public function stock_projection_handles_zero_sales_gracefully()
     {
         $user = User::factory()->create();

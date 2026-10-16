@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\Order;
@@ -13,7 +14,7 @@ class PaymentCoherenceTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function pago_con_monto_declarado_distinto_se_marca_riesgo_alto_y_puede_aprobarse_por_admin()
     {
         // Crear usuario admin
