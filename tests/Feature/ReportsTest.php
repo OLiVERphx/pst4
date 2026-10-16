@@ -7,7 +7,10 @@ use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\User;
 use App\Models\Product;
+use App\Models\Brand;
+use App\Models\Category;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class ReportsTest extends TestCase
 {
@@ -19,12 +22,16 @@ class ReportsTest extends TestCase
         // Asegurar que permisos existan
         Permission::firstOrCreate(['name' => 'reportes.ver']);
         Permission::firstOrCreate(['name' => 'pagos.ver']);
+        // MiddlewareAdmin exige rol de panel antes de evaluar el permiso
+        Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'vendedor', 'guard_name' => 'web']);
     }
 
     #[Test]
     public function authorized_user_can_view_reports()
     {
         $user = User::factory()->create();
+        $user->assignRole('admin');
         $user->givePermissionTo('reportes.ver');
 
         $response = $this->actingAs($user)->get(route('admin.reports.index'));
@@ -36,8 +43,9 @@ class ReportsTest extends TestCase
     #[Test]
     public function unauthorized_user_gets_forbidden()
     {
+        // Vendedor: entra al panel, pero sin permiso de reportes
         $user = User::factory()->create();
-        // no permission given
+        $user->assignRole('vendedor');
 
         $response = $this->actingAs($user)->get(route('admin.reports.index'));
 
@@ -48,6 +56,7 @@ class ReportsTest extends TestCase
     public function stock_projection_handles_zero_sales_gracefully()
     {
         $user = User::factory()->create();
+        $user->assignRole('admin');
         $user->givePermissionTo('reportes.ver');
 
         // Crear producto sin ventas en últimos 30 días
@@ -56,8 +65,8 @@ class ReportsTest extends TestCase
             'nombre' => 'Producto Sin Ventas',
             'slug' => 'producto-sin-ventas',
             'descripcion' => 'Prueba',
-            'marca_id' => 1,
-            'categoria_id' => 1,
+            'marca_id' => Brand::create(['nombre' => 'Marca Test', 'slug' => 'marca-test'])->id,
+            'categoria_id' => Category::create(['nombre' => 'Categoria Test', 'slug' => 'categoria-test'])->id,
             'precio_detal' => 100,
             'precio_mayor' => 80,
             'precio_costo' => 50,

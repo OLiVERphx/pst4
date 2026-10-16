@@ -211,7 +211,7 @@ class ServicioValidacionPagos
         } elseif (($coh['nivel_riesgo_coherencia'] ?? 'low') === 'medium' && $finalRisk !== 'high') {
             $finalRisk = 'medium';
         }
-        $payment->metadata_comprobante['nivel_riesgo'] = $finalRisk;
+        $payment->metadata_comprobante = array_merge($payment->metadata_comprobante ?? [], ['nivel_riesgo' => $finalRisk]);
 
         $payment->save();
 
