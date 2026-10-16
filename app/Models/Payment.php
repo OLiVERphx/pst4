@@ -24,6 +24,11 @@ class Payment extends Model
         'monto_declarado',
         'moneda_declarada',
         'fecha_pago_declarada',
+        // Pagos en Bs: tasa BCV del día del pago, monto esperado y datos del pagador
+        'tasa_bcv_aplicada',
+        'monto_bs_esperado',
+        'banco_origen',
+        'cedula_pagador',
         'moneda',
         'numero_referencia',
         'ruta_comprobante',
@@ -38,6 +43,8 @@ class Payment extends Model
     protected $casts = [
         'monto' => 'decimal:2',
         'monto_declarado' => 'decimal:2',
+        'tasa_bcv_aplicada' => 'decimal:6',
+        'monto_bs_esperado' => 'decimal:2',
         'metadata_comprobante' => 'array',
         'fecha_pago_declarada' => 'datetime',
         'verificado_en' => 'datetime',

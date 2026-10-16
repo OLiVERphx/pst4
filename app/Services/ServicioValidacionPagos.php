@@ -105,10 +105,9 @@ class ServicioValidacionPagos
     }
 
     /**
-     * Almacena el comprobante para un pago y guarda metadata en el modelo.
-     * @param Payment $payment
-     * @param UploadedFile $file
-     * @return string path almacenado (relative to storage/app)
+     * Compara lo declarado por el cliente y lo leído del comprobante (OCR) contra
+     * el pedido: monto (en Bs con la tasa BCV del día del pago para Pago Móvil y
+     * transferencias), fecha, referencia única y coincidencia OCR/declarado.
      */
     public function validarCoherencia(Payment $payment): array
     {
@@ -116,64 +115,114 @@ class ServicioValidacionPagos
             'monto_coincide' => null,
             'fecha_valida' => null,
             'referencia_unica' => null,
+            'ocr_coincide' => null,
+            'ocr_diferencias' => [],
+            'moneda_comparada' => null,
+            'tasa_bcv' => null,
+            'monto_bs_esperado' => null,
+            'monto_comprobante' => null,
+            'diferencia_pct' => null,
             'nivel_riesgo_coherencia' => 'low',
         ];
 
-        // Tolerancia configurable
-        $tolerance = (float) config('pagos.tolerancia_monto', 0.50);
+        $ocr = $payment->metadata_comprobante['ocr'] ?? null;
+        $ocr = ($ocr['disponible'] ?? false) ? $ocr : null;
+        $autocompletados = $payment->metadata_comprobante['autocompletado'] ?? [];
 
-        // Monto
-        if ($payment->monto_declarado === null) {
-            $result['monto_coincide'] = null; // sin dato declarado
-        } else {
-            $decl = (float) $payment->monto_declarado;
-            $expected = (float) $payment->monto;
-            $result['monto_coincide'] = (abs($decl - $expected) <= $tolerance);
+        // Fecha del pago: la del comprobante manda; si no se pudo leer, la declarada
+        $fechaPago = $ocr['fecha'] ?? $payment->fecha_pago_declarada?->toDateString();
+
+        // Fecha: solo el día (los comprobantes no traen hora). No puede ser futura
+        // ni anterior a la creación del pedido (con margen configurable).
+        if ($fechaPago) {
+            $hoy = now()->toDateString();
+            $minimo = $payment->order?->created_at
+                ? $payment->order->created_at->copy()->subDays((int) config('pagos.dias_pago_antes_pedido', 1))->toDateString()
+                : null;
+            $result['fecha_valida'] = $fechaPago <= $hoy && (! $minimo || $fechaPago >= $minimo);
         }
 
-        // Fecha: no puede ser futura ni anterior a la creación del pedido
-        if ($payment->fecha_pago_declarada === null) {
-            $result['fecha_valida'] = null;
-        } else {
-            try {
-                $fecha = $payment->fecha_pago_declarada;
-                $now = now();
-                $orderCreated = $payment->order?->created_at;
-                $valid = true;
-                if ($fecha > $now) {
-                    $valid = false;
-                }
-                if ($orderCreated && $fecha < $orderCreated) {
-                    $valid = false;
-                }
-                $result['fecha_valida'] = $valid;
-            } catch (\Throwable $e) {
-                $result['fecha_valida'] = false;
+        // Monto. Pago Móvil y transferencias se pagan en bolívares: el monto del
+        // comprobante debe ser total USD × tasa BCV vigente el día del pago.
+        $esBs = in_array($payment->metodo, ['transferencia', 'pagomovil'], true)
+            || in_array(strtoupper((string) $payment->moneda_declarada), ['VES', 'BS'], true);
+        $tasa = $esBs ? ServicioPrecios::tasaBcvEn($fechaPago ?? $payment->created_at ?? now()) : null;
+
+        if ($esBs && $tasa) {
+            $esperado = (float) bcmul((string) $payment->monto, (string) $tasa, 2);
+            $comprobante = $ocr['monto_bs'] ?? ($payment->monto_declarado !== null ? (float) $payment->monto_declarado : null);
+
+            $result['moneda_comparada'] = 'VES';
+            $result['tasa_bcv'] = $tasa;
+            $result['monto_bs_esperado'] = $esperado;
+            $result['monto_comprobante'] = $comprobante;
+
+            if ($comprobante !== null && $esperado > 0) {
+                $result['diferencia_pct'] = round(abs($comprobante - $esperado) / $esperado * 100, 2);
+                $result['monto_coincide'] = $result['diferencia_pct'] <= (float) config('pagos.tolerancia_bs_porcentaje', 1.0);
             }
+        } elseif ($payment->monto_declarado !== null) {
+            // USD / USDT (Binance) o sin tasa BCV cargada: comparación directa en dólares
+            $result['moneda_comparada'] = 'USD';
+            $result['monto_comprobante'] = (float) $payment->monto_declarado;
+            $tolerance = (float) config('pagos.tolerancia_monto', 0.50);
+            $result['monto_coincide'] = abs((float) $payment->monto_declarado - (float) $payment->monto) <= $tolerance;
         }
 
         // Referencia: no repetida entre pedidos distintos
-        if (empty($payment->numero_referencia)) {
-            $result['referencia_unica'] = null;
-        } else {
-            $dupe = Payment::where('numero_referencia', $payment->numero_referencia)
+        $referencia = $payment->numero_referencia ?: ($ocr['operacion'] ?? null);
+        if ($referencia) {
+            $dupe = Payment::where('numero_referencia', $referencia)
                 ->where('pedido_id', '!=', $payment->pedido_id)
                 ->exists();
             $result['referencia_unica'] = !$dupe;
         }
 
-        // Nivel de riesgo derivado solo de coherencia
+        // Lo declarado por el cliente contra lo leído en el comprobante
+        // (los campos autocompletados desde el OCR no se comparan consigo mismos)
+        if ($ocr) {
+            $comparados = 0;
+
+            if ($esBs && $ocr['monto_bs'] !== null && $payment->monto_declarado !== null && ! in_array('monto_declarado', $autocompletados, true)) {
+                $comparados++;
+                if (abs((float) $payment->monto_declarado - $ocr['monto_bs']) > max(0.01, $ocr['monto_bs'] * 0.005)) {
+                    $result['ocr_diferencias'][] = 'monto';
+                }
+            }
+            if ($ocr['fecha'] && $payment->fecha_pago_declarada && ! in_array('fecha_pago_declarada', $autocompletados, true)) {
+                $comparados++;
+                if ($ocr['fecha'] !== $payment->fecha_pago_declarada->toDateString()) {
+                    $result['ocr_diferencias'][] = 'fecha';
+                }
+            }
+            if ($ocr['operacion'] && $payment->numero_referencia && ! in_array('numero_referencia', $autocompletados, true)) {
+                $comparados++;
+                // Se acepta que el cliente escriba solo los últimos dígitos
+                $decl = preg_replace('/\D/', '', $payment->numero_referencia);
+                if ($decl === '' || ! str_ends_with($ocr['operacion'], $decl)) {
+                    $result['ocr_diferencias'][] = 'referencia';
+                }
+            }
+            if ($comparados > 0) {
+                $result['ocr_coincide'] = empty($result['ocr_diferencias']);
+            }
+        }
+
         if ($result['monto_coincide'] === false) {
             $result['nivel_riesgo_coherencia'] = 'high';
-        } elseif ($result['fecha_valida'] === false || $result['referencia_unica'] === false) {
+        } elseif ($result['fecha_valida'] === false || $result['referencia_unica'] === false || $result['ocr_coincide'] === false) {
             $result['nivel_riesgo_coherencia'] = 'medium';
-        } else {
-            $result['nivel_riesgo_coherencia'] = 'low';
         }
 
         return $result;
     }
 
+    /**
+     * Almacena el comprobante para un pago y guarda metadata en el modelo.
+     * @param Payment $payment
+     * @param UploadedFile $file
+     * @return string path almacenado (relative to storage/app)
+     */
     public function store(Payment $payment, UploadedFile $file): string
     {
         $check = $this->validarComprobante($file);
@@ -188,6 +237,10 @@ class ServicioValidacionPagos
         // Guardar metadata en Payment
         $payment->ruta_comprobante = $path;
         $payment->hash_comprobante = $check['hash'] ?? hash_file('sha256', $file->getRealPath());
+
+        // Leer el comprobante (OCR) y completar lo que el cliente no declaró
+        $check['ocr'] = app(ServicioOcrComprobantes::class)->leer(Storage::disk('local')->path($path), $check['mime'] ?? null);
+        $check['autocompletado'] = $this->autocompletarDesdeOcr($payment, $check['ocr']);
         $payment->metadata_comprobante = $check;
 
         // Verificar numero_referencia si existe en el modelo
@@ -201,6 +254,8 @@ class ServicioValidacionPagos
         // Validaciones de coherencia adicionales (monto, fecha, referencia)
         $coh = $this->validarCoherencia($payment);
         $payment->metadata_comprobante = array_merge($payment->metadata_comprobante ?? [], ['coherencia' => $coh]);
+        $payment->tasa_bcv_aplicada = $coh['tasa_bcv'];
+        $payment->monto_bs_esperado = $coh['monto_bs_esperado'];
 
         // Si la coherencia indica riesgo alto, marcar nivel_riesgo en metadata y el estado como sospechoso
         $existingRisk = $payment->metadata_comprobante['nivel_riesgo'] ?? ($check['nivel_riesgo'] ?? 'low');
@@ -217,6 +272,37 @@ class ServicioValidacionPagos
         $payment->save();
 
         return $path;
+    }
+
+    /**
+     * Rellena con lo leído del comprobante los campos que el cliente dejó vacíos.
+     * Devuelve la lista de campos completados para mostrarlos como "leído del comprobante".
+     */
+    private function autocompletarDesdeOcr(Payment $payment, array $ocr): array
+    {
+        if (! ($ocr['disponible'] ?? false)) {
+            return [];
+        }
+
+        $completados = [];
+        $mapa = [
+            'numero_referencia' => $ocr['operacion'] ?? null,
+            'monto_declarado' => $ocr['monto_bs'] ?? null,
+            'fecha_pago_declarada' => $ocr['fecha'] ?? null,
+            'banco_origen' => $ocr['banco'] ?? null,
+            'cedula_pagador' => $ocr['identificacion'] ?? null,
+        ];
+        foreach ($mapa as $campo => $valor) {
+            if ($valor !== null && ($payment->{$campo} === null || $payment->{$campo} === '')) {
+                $payment->{$campo} = $valor;
+                $completados[] = $campo;
+            }
+        }
+        if (in_array('monto_declarado', $completados, true)) {
+            $payment->moneda_declarada = 'VES';
+        }
+
+        return $completados;
     }
 
     /**
