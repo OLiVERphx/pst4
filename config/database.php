@@ -3,6 +3,32 @@
 use Illuminate\Support\Str;
 use Pdo\Mysql;
 
+$mysql = [
+    'driver' => 'mysql',
+    'url' => env('DB_URL'),
+    'host' => env('DB_HOST', '127.0.0.1'),
+    'port' => env('DB_PORT', '3306'),
+    'database' => env('DB_DATABASE', 'laravel'),
+    'username' => env('DB_USERNAME', 'root'),
+    'password' => env('DB_PASSWORD', ''),
+    'unix_socket' => env('DB_SOCKET', ''),
+    'charset' => env('DB_CHARSET', 'utf8mb4'),
+    'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+    'prefix' => '',
+    'prefix_indexes' => true,
+    'strict' => true,
+    'engine' => null,
+    'options' => extension_loaded('pdo_mysql') ? array_filter([
+        Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+    ]) : [],
+    // mysqldump (spatie/laravel-backup) sin privilegio PROCESS: el usuario de la
+    // aplicación es de mínimo privilegio (database/sql/usuarios_minimo_privilegio.sql)
+    'dump' => array_filter([
+        'add_extra_option' => '--no-tablespaces --skip-triggers',
+        'dump_binary_path' => env('DB_DUMP_BINARY_PATH'),
+    ]),
+];
+
 return [
 
     /*
@@ -44,25 +70,15 @@ return [
             'transaction_mode' => 'DEFERRED',
         ],
 
-        'mysql' => [
-            'driver' => 'mysql',
-            'url' => env('DB_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => env('DB_CHARSET', 'utf8mb4'),
-            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => true,
-            'engine' => null,
-            'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
-        ],
+        'mysql' => $mysql,
+
+        // Misma base con un usuario que sí puede alterar el esquema. Solo para migraciones:
+        //   php artisan migrate --database=mysql_migraciones
+        // Si no se define DB_MIGRATION_USERNAME, usa el usuario normal.
+        'mysql_migraciones' => array_merge($mysql, [
+            'username' => env('DB_MIGRATION_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('DB_MIGRATION_PASSWORD', env('DB_PASSWORD', '')),
+        ]),
 
         'mariadb' => [
             'driver' => 'mariadb',
