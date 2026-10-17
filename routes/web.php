@@ -143,7 +143,8 @@ Route::middleware('auth')->group(function () {
 Route::prefix('api/catalogo')->group(function () {
     Route::get('/',         [\App\Http\Controllers\Api\CatalogController::class, 'index']);
     Route::get('/buscar',   [\App\Http\Controllers\Api\CatalogController::class, 'search']);
-    Route::get('/{id}/relacionados', [\App\Http\Controllers\Api\CatalogController::class, 'related']);
-    Route::get('/{id}',     [\App\Http\Controllers\Api\CatalogController::class, 'show']);
+    // {id} solo numerico: otro texto (p. ej. "1 AND 1=1") da 404 y no un error 500
+    Route::get('/{id}/relacionados', [\App\Http\Controllers\Api\CatalogController::class, 'related'])->whereNumber('id');
+    Route::get('/{id}',     [\App\Http\Controllers\Api\CatalogController::class, 'show'])->whereNumber('id');
 });
 
