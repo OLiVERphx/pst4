@@ -8,6 +8,8 @@
     "require": {
         "php": "^8.3",
         "ext-bcmath": "*",
+        "ext-fileinfo": "*",
+        "ext-gd": "*",
         "laravel/framework": "^13.8",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
@@ -16,6 +18,7 @@
         "spatie/laravel-permission": "^8.0"
     },
     "require-dev": {
+        "ext-pdo_sqlite": "*",
         "fakerphp/faker": "^1.23",
         "laravel/pail": "^1.2.5",
         "laravel/pao": "^1.0.6",

@@ -134,8 +134,15 @@ class OcrComprobanteTest extends TestCase
     #[Test]
     public function el_checkout_lee_el_comprobante_y_autocompleta_los_datos()
     {
-        if (! Process::run(['tesseract', '--version'])->successful()) {
-            $this->markTestSkipped('Tesseract no está instalado en este equipo.');
+        // Mismo binario que usa el sistema (TESSERACT_PATH), no el del PATH
+        $binario = config('pagos.ocr.tesseract', 'tesseract');
+        try {
+            $instalado = Process::run([$binario, '--version'])->successful();
+        } catch (\Throwable $e) {
+            $instalado = false;
+        }
+        if (! $instalado) {
+            $this->markTestSkipped("Tesseract no está instalado en {$binario} (revisa TESSERACT_PATH en el .env).");
         }
         config(['pagos.ocr.habilitado' => true]);
         $this->seed();

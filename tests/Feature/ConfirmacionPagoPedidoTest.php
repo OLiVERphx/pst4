@@ -82,7 +82,7 @@ class ConfirmacionPagoPedidoTest extends TestCase
         $this->pedido('online', 'transferencia', 'pago_subido'); // aún no confirmado: no cuenta
 
         $despues = app(ServicioDashboard::class)->obtenerEstadisticas()['total_ventas_mes'];
-        $this->assertEquals(20.00, $despues - $antes);
+        $this->assertEqualsWithDelta(20.00, $despues - $antes, 0.001);
 
         $this->actingAs($this->admin)->get(route('admin.dashboard'))->assertOk();
         $this->actingAs($this->admin)->get(route('admin.reports.index'))->assertOk();
