@@ -53,6 +53,25 @@ class OcrComprobanteTest extends TestCase
         $this->assertSame('Cliente De Prueba', $c['nombre']);
     }
 
+    #[Test]
+    public function el_monto_tolera_los_errores_tipicos_del_ocr()
+    {
+        // Variantes vistas en distintas versiones de Tesseract (Linux y Windows)
+        $casos = [
+            '1 00,00 Bs' => 100.0,   // dígitos separados
+            '100, 00 Bs' => 100.0,
+            '100,00 8s' => 100.0,    // "Bs" leído como "8s"
+            '1OO,OO Bs' => 100.0,    // O en vez de 0
+            '146 800,00 Bs' => 146800.0,
+            'Bs. 2.500,50' => 2500.5,
+            '0,00 Bs' => null,       // un monto en cero no es un pago
+        ];
+        foreach ($casos as $linea => $esperado) {
+            $c = ServicioOcrComprobantes::extraerCampos("PagomovilBDV Personas\n{$linea}\nFecha: 16/10/2026");
+            $this->assertSame($esperado, $c['monto_bs'], "Monto mal leído en: {$linea}");
+        }
+    }
+
     private function pagoBs(float $usd, array $ocr, array $extra = []): Payment
     {
         $this->seed();
@@ -163,11 +182,13 @@ class OcrComprobanteTest extends TestCase
         ])->assertRedirect();
 
         $pago = Payment::latest('id')->firstOrFail();
-        $this->assertSame('001122334455', $pago->numero_referencia);
-        $this->assertEquals($producto->precio_detal * 50, (float) $pago->monto_declarado);
+        // Si falla, el mensaje muestra lo que leyó Tesseract en este equipo
+        $leido = 'Texto OCR: ' . json_encode($pago->metadata_comprobante['ocr']['texto'] ?? $pago->metadata_comprobante['ocr'] ?? null, JSON_UNESCAPED_UNICODE);
+        $this->assertSame('001122334455', $pago->numero_referencia, $leido);
+        $this->assertEquals($producto->precio_detal * 50, (float) $pago->monto_declarado, $leido);
         $this->assertSame(now()->toDateString(), $pago->fecha_pago_declarada->toDateString());
         $this->assertContains('numero_referencia', $pago->metadata_comprobante['autocompletado']);
-        $this->assertTrue($pago->metadata_comprobante['coherencia']['monto_coincide']);
+        $this->assertTrue($pago->metadata_comprobante['coherencia']['monto_coincide'], $leido);
         $this->assertEquals(50.00, (float) $pago->tasa_bcv_aplicada);
     }
 
@@ -176,15 +197,15 @@ class OcrComprobanteTest extends TestCase
     {
         $lineas = ['PagomovilBDV Personas', '', "{$montoBs} Bs", '', "Fecha: {$fecha}", "Operacion: {$operacion}",
             'Identificacion: 12345678', 'Banco: 0102 - BANCO DE VENEZUELA', 'Concepto: prueba'];
-        $w = 260;
-        $h = 20 + count($lineas) * 18;
+        $w = 300;
+        $h = 40 + count($lineas) * 20;
         $img = imagecreatetruecolor($w, $h);
         imagefill($img, 0, 0, imagecolorallocate($img, 34, 34, 34));
         $blanco = imagecolorallocate($img, 255, 255, 255);
         foreach ($lineas as $i => $l) {
-            imagestring($img, 5, 10, 10 + $i * 18, $l, $blanco);
+            imagestring($img, 5, 20, 20 + $i * 20, $l, $blanco);
         }
-        $big = imagescale($img, $w * 3, $h * 3, IMG_NEAREST_NEIGHBOUR);
+        $big = imagescale($img, $w * 4, $h * 4, IMG_NEAREST_NEIGHBOUR);
         $ruta = tempnam(sys_get_temp_dir(), 'bdv') . '.png';
         imagepng($big, $ruta);
 

@@ -80,12 +80,15 @@ class ServicioOcrComprobantes
             $campos['tipo'] = 'transferencia';
         }
 
-        // Monto: número con decimales junto a "Bs" (antes o después). El OCR a veces
-        // confunde la coma decimal con un punto, por eso se aceptan ambos.
-        $num = '(\d{1,3}(?:[.,\s]\d{3})*[.,]\d{2})';
-        if (preg_match("/{$num}\s*Bs\b/iu", $t, $m) || preg_match("/Bs\.?\s*{$num}/iu", $t, $m)
-            || preg_match("/Monto\s*:?\s*{$num}/iu", $t, $m)) {
-            $campos['monto_bs'] = self::normalizarMonto($m[1]);
+        // Monto: número con decimales junto a "Bs" (antes o después), en la misma línea.
+        // Tolera errores típicos del OCR: espacios dentro del número ("1 00,00"),
+        // O por 0, l/I por 1, punto por coma decimal y "8s" por "Bs".
+        $num = '([0-9OoIl][0-9OoIl., \t]*[.,][ \t]?[0-9Oo]{2})';
+        $bs = '(?:Bs|8s|B5)\.?';
+        if (preg_match("/{$num}[ \t]*{$bs}(?![a-z])/iu", $t, $m) || preg_match("/{$bs}[ \t]*{$num}/iu", $t, $m)
+            || preg_match("/Monto[ \t]*:?[ \t]*{$num}/iu", $t, $m)) {
+            $monto = self::normalizarMonto(strtr($m[1], ['O' => '0', 'o' => '0', 'I' => '1', 'l' => '1']));
+            $campos['monto_bs'] = $monto > 0 ? $monto : null;
         }
 
         if (preg_match('/(\d{2})[\/\-.](\d{2})[\/\-.](\d{4})/', $t, $m) && checkdate((int) $m[2], (int) $m[1], (int) $m[3])) {
