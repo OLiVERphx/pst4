@@ -49,7 +49,7 @@ class AuthController extends Controller
             'apellido'  => 'required|string|max:100',
             'email'     => 'required|email|unique:users,email',
             'password'  => 'required|min:8|confirmed',
-            'cedula'    => 'nullable|string|max:20|unique:users,cedula',
+            'cedula'    => ['nullable', 'string', 'max:20', new \App\Rules\CedulaUnica()],
             'telefono'  => 'nullable|string|max:20',
             'ciudad'    => 'nullable|string|max:80',
             'direccion' => 'nullable|string|max:500',

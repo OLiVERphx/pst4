@@ -45,7 +45,9 @@ class Payment extends Model
         'monto_declarado' => 'decimal:2',
         'tasa_bcv_aplicada' => 'decimal:6',
         'monto_bs_esperado' => 'decimal:2',
-        'metadata_comprobante' => 'array',
+        // Cifrado: incluye lo leído del comprobante por OCR (nombre, cédula, operación)
+        'metadata_comprobante' => 'encrypted:array',
+        'cedula_pagador' => 'encrypted',
         'fecha_pago_declarada' => 'datetime',
         'verificado_en' => 'datetime',
     ];

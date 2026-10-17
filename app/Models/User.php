@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use App\Support\IndiceCiego;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Facades\Crypt;
 
 class User extends Authenticatable
 {
@@ -39,6 +42,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'cedula_hash',
+        'telefono_hash',
     ];
 
     // Casts para tipos nativos
@@ -49,7 +54,45 @@ class User extends Authenticatable
         // 'bloqueado' indica que el cliente puede ver catálogo pero no completar checkout
         'bloqueado' => 'boolean',
         'password' => 'hashed',
+        // Datos personales cifrados en la base (AES-256 con APP_KEY)
+        'cedula' => 'encrypted',
+        'telefono' => 'encrypted',
+        'direccion' => 'encrypted',
     ];
+
+    // Al asignar cédula o teléfono se cifran y se calcula su índice ciego en el mismo
+    // paso (no con eventos: los seeders corren sin eventos de modelo). La lectura la
+    // descifra el cast 'encrypted'. Ver App\Support\IndiceCiego.
+    protected function cedula(): Attribute
+    {
+        return Attribute::make(set: fn ($valor) => [
+            'cedula' => self::cifrar($valor),
+            'cedula_hash' => IndiceCiego::cedula($valor),
+        ]);
+    }
+
+    protected function telefono(): Attribute
+    {
+        return Attribute::make(set: fn ($valor) => [
+            'telefono' => self::cifrar($valor),
+            'telefono_hash' => IndiceCiego::telefono($valor),
+        ]);
+    }
+
+    private static function cifrar($valor): ?string
+    {
+        return $valor === null || $valor === '' ? null : Crypt::encryptString((string) $valor);
+    }
+
+    public function scopePorCedula($query, ?string $cedula)
+    {
+        return $query->where('cedula_hash', IndiceCiego::cedula($cedula) ?? '-');
+    }
+
+    public function scopePorTelefono($query, ?string $telefono)
+    {
+        return $query->where('telefono_hash', IndiceCiego::telefono($telefono) ?? '-');
+    }
 
     // Relaciones
     public function role(): BelongsTo

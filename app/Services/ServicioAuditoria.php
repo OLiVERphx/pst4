@@ -61,8 +61,8 @@ class ServicioAuditoria
                 'accion' => $accion,
                 'entidad_tipo' => $entidadTipo,
                 'entidad_id' => $entidadId,
-                'valores_antes' => $antes,
-                'valores_despues' => $despues,
+                'valores_antes' => self::ocultarDatosPersonales($antes, $despues),
+                'valores_despues' => self::ocultarDatosPersonales($despues, $antes),
                 'ip_origen' => $ipOrigen,
                 'user_agent' => $userAgent,
                 'created_at' => now(),
@@ -79,5 +79,29 @@ class ServicioAuditoria
 
             return null;
         }
+    }
+
+    /**
+     * Campos que se guardan cifrados en su tabla: la bitácora no debe copiarlos en
+     * claro. Se registra solo si cambiaron, no su valor.
+     */
+    private const CAMPOS_PROTEGIDOS = [
+        'password', 'remember_token', 'cedula', 'telefono', 'direccion', 'cedula_hash', 'telefono_hash',
+        'entrega_telefono', 'entrega_direccion', 'cedula_pagador', 'metadata_comprobante',
+    ];
+
+    private static function ocultarDatosPersonales(?array $valores, ?array $otros): ?array
+    {
+        if ($valores === null) {
+            return null;
+        }
+        foreach (self::CAMPOS_PROTEGIDOS as $campo) {
+            if (array_key_exists($campo, $valores)) {
+                $cambio = ! is_array($otros) || ! array_key_exists($campo, $otros) || $otros[$campo] !== $valores[$campo];
+                $valores[$campo] = $valores[$campo] === null ? null : ($cambio ? '[protegido: modificado]' : '[protegido]');
+            }
+        }
+
+        return $valores;
     }
 }

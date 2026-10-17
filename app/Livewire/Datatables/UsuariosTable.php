@@ -71,7 +71,8 @@ class UsuariosTable extends Component
                 $sub->where('name', 'like', "%{$q}%")
                     ->orWhere('apellido', 'like', "%{$q}%")
                     ->orWhere('email', 'like', "%{$q}%")
-                    ->orWhere('cedula', 'like', "%{$q}%");
+                    // Cédula cifrada: solo búsqueda exacta por su índice ciego
+                    ->when(\App\Support\IndiceCiego::cedula($q), fn ($w, $hash) => $w->orWhere('cedula_hash', $hash));
             });
         }
 
@@ -152,7 +153,7 @@ class UsuariosTable extends Component
             'form.name' => 'required|string|max:100',
             'form.apellido' => 'nullable|string|max:100',
             'form.email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($this->editingUserId)],
-            'form.cedula' => 'nullable|string|max:30',
+            'form.cedula' => ['nullable', 'string', 'max:30', new \App\Rules\CedulaUnica($this->editingUserId)],
             'form.telefono' => 'nullable|string|max:30',
             'form.rol' => 'required|in:superadmin,admin,vendedor,cliente',
             'form.password' => $this->editingUserId ? 'nullable|min:6' : 'required|min:6',

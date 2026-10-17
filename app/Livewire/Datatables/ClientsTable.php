@@ -45,7 +45,8 @@ class ClientsTable extends Component
             $q = $this->search;
             $query->where(function ($s) use ($q) {
                 $s->where('name', 'like', "%{$q}%")
-                  ->orWhere('cedula', 'like', "%{$q}%")
+                  // Cédula cifrada: solo búsqueda exacta por su índice ciego
+                  ->when(\App\Support\IndiceCiego::cedula($q), fn ($w, $hash) => $w->orWhere('cedula_hash', $hash))
                   ->orWhere('email', 'like', "%{$q}%");
             });
         }

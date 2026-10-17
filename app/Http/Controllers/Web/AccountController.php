@@ -40,7 +40,7 @@ class AccountController extends Controller
             'name'      => 'required|string|max:255',
             'apellido'  => 'required|string|max:255',
             'email'     => 'required|email|max:255|unique:users,email,' . $user->id,
-            'cedula'    => 'nullable|string|max:20|unique:users,cedula,' . $user->id,
+            'cedula'    => ['nullable', 'string', 'max:20', new \App\Rules\CedulaUnica($user->id)],
             'telefono'  => 'nullable|string|max:20',
             'ciudad'    => 'nullable|string|max:80',
             'direccion' => 'nullable|string|max:500',

@@ -52,6 +52,9 @@ class Order extends Model
         'subtotal' => 'decimal:2',
         'descuento' => 'decimal:2',
         'total' => 'decimal:2',
+        // Datos personales de entrega cifrados en la base
+        'entrega_telefono' => 'encrypted',
+        'entrega_direccion' => 'encrypted',
     ];
 
     public function user(): BelongsTo

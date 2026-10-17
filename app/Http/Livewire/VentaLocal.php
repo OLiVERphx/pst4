@@ -118,11 +118,11 @@ class VentaLocal extends Component
         // Intentar identificar cliente por cédula o teléfono (si existe columna en usuarios)
         $clienteId = null;
         if ($this->cliente_cedula) {
-            $u = User::where('cedula', $this->cliente_cedula)->first();
+            $u = User::porCedula($this->cliente_cedula)->first();
             $clienteId = $u?->id;
         }
         if (!$clienteId && $this->cliente_telefono) {
-            $u = User::where('telefono', $this->cliente_telefono)->first();
+            $u = User::porTelefono($this->cliente_telefono)->first();
             $clienteId = $u?->id;
         }
 

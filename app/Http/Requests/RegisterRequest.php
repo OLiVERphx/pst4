@@ -18,7 +18,7 @@ class RegisterRequest extends FormRequest
             'apellido' => 'nullable|string|max:100',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|confirmed|min:8',
-            'cedula' => 'nullable|unique:users,cedula',
+            'cedula' => ['nullable', 'string', 'max:20', new \App\Rules\CedulaUnica()],
             'telefono' => 'nullable|string',
             'ciudad' => 'nullable|string',
             'direccion' => 'nullable|string',

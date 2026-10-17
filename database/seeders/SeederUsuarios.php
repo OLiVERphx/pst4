@@ -45,7 +45,7 @@ class SeederUsuarios extends Seeder
             }
         }
 
-        // Clientes de prueba (inserción masiva con insertOrIgnore)
+        // Clientes de prueba
         $clients = [
             ['name' => 'Carlos', 'apellido' => 'Gonzalez', 'email' => 'carlos.gonzalez@example.com', 'cedula' => 'V-10123456', 'telefono' => '0414-1234567', 'ciudad' => 'Valera'],
             ['name' => 'María', 'apellido' => 'Rodríguez', 'email' => 'maria.rodriguez@example.com', 'cedula' => 'V-20123456', 'telefono' => '0416-2345678', 'ciudad' => 'Trujillo'],
@@ -55,9 +55,9 @@ class SeederUsuarios extends Seeder
             ['name' => 'Sofia', 'apellido' => 'Fernandez', 'email' => 'sofia.fernandez@example.com', 'cedula' => 'V-60123456', 'telefono' => '0414-6789012', 'ciudad' => 'Trujillo'],
         ];
 
-        $insert = [];
+        // Con el modelo (no DB::table) para que cédula/teléfono se guarden cifrados
         foreach ($clients as $c) {
-            $insert[] = [
+            User::firstOrCreate(['email' => $c['email']], [
                 'rol_id' => $clienteRole,
                 'name' => $c['name'],
                 'apellido' => $c['apellido'],
@@ -69,11 +69,7 @@ class SeederUsuarios extends Seeder
                 'estado' => 'Trujillo',
                 'activo' => true,
                 'password' => Hash::make('Client123!'),
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
+            ]);
         }
-
-        DB::table('users')->insertOrIgnore($insert);
     }
 }
