@@ -44,8 +44,9 @@ return [
         '0191' => 'BNC Banco Nacional de Crédito',
     ],
 
-    // OCR de comprobantes con Tesseract. En Windows/Laragon, TESSERACT_PATH suele ser
-    // "C:\Program Files\Tesseract-OCR\tesseract.exe".
+    // OCR de comprobantes con Tesseract. En Windows/Laragon, en el .env y con barras normales
+    // (la barra invertida dentro de comillas rompe el .env):
+    //   TESSERACT_PATH="C:/Program Files/Tesseract-OCR/tesseract.exe"
     'ocr' => [
         'habilitado' => env('OCR_HABILITADO', true),
         'tesseract' => env('TESSERACT_PATH', 'tesseract'),
