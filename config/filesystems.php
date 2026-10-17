@@ -63,7 +63,11 @@ return [
         // Disco dedicado para backups. Usar un bucket/almacenamiento distinto del
         // disco de producción para separar responsabilidades y mitigar riesgos
         // si el bucket principal se corrompe o se elimina por error.
-        'backups' => [
+        // Destino de los respaldos programados (backup:run). Por defecto en este mismo
+        // servidor; con BACKUP_DISK_DRIVER=s3 van a un bucket externo (requiere
+        // composer require league/flysystem-aws-s3-v3). Antes era s3 fijo sin la
+        // librería instalada, así que backup:run fallaba siempre.
+        'backups' => env('BACKUP_DISK_DRIVER', 'local') === 's3' ? [
             'driver' => 's3',
             'key' => env('AWS_BACKUP_ACCESS_KEY_ID', env('AWS_ACCESS_KEY_ID')),
             'secret' => env('AWS_BACKUP_SECRET_ACCESS_KEY', env('AWS_SECRET_ACCESS_KEY')),
@@ -72,6 +76,11 @@ return [
             'url' => env('AWS_BACKUP_URL', env('AWS_URL')),
             'endpoint' => env('AWS_BACKUP_ENDPOINT', env('AWS_ENDPOINT')),
             'use_path_style_endpoint' => env('AWS_BACKUP_USE_PATH_STYLE_ENDPOINT', env('AWS_USE_PATH_STYLE_ENDPOINT', false)),
+            'throw' => false,
+            'report' => false,
+        ] : [
+            'driver' => 'local',
+            'root' => storage_path('app/backups-programados'),
             'throw' => false,
             'report' => false,
         ],

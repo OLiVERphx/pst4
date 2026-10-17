@@ -62,7 +62,7 @@
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <a href="{{ route('admin.respaldos.descargar', ['archivo' => $r['nombre']]) }}" class="bg-[#475569] hover:bg-[#64748B] text-[#F1F5F9] text-xs font-semibold px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1.5" title="Descargar archivo .sql">
+                                    <a href="{{ route('admin.respaldos.descargar', ['archivo' => $r['nombre']]) }}" class="bg-[#475569] hover:bg-[#64748B] text-[#F1F5F9] text-xs font-semibold px-3 py-1.5 rounded-lg transition inline-flex items-center gap-1.5" title="Descargar respaldo (ZIP cifrado, se abre con la contraseña de respaldos)">
                                         <span>📥</span>
                                         <span>Descargar</span>
                                     </a>

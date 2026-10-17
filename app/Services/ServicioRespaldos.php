@@ -25,12 +25,21 @@ class ServicioRespaldos
     }
 
     /**
-     * Genera un volcado SQL completo de la base de datos actual.
+     * Genera un volcado SQL completo de la base de datos actual y lo guarda en un
+     * ZIP cifrado con AES-256 (contraseña BACKUP_ARCHIVE_PASSWORD). El .sql en
+     * claro solo existe mientras se comprime. Se abre con 7-Zip o WinRAR.
      */
     public function crearRespaldo(): array
     {
+        $password = (string) config('backup.backup.password');
+        if ($password === '') {
+            throw new \RuntimeException('Configura BACKUP_ARCHIVE_PASSWORD en el .env: los respaldos se guardan cifrados.');
+        }
+
         $fecha = now()->format('Y-m-d_His');
-        $nombreArchivo = "respaldo_smartphoneworld_{$fecha}.sql";
+        $nombreSql = "respaldo_smartphoneworld_{$fecha}.sql";
+        $rutaSql = "{$this->backupDir}/{$nombreSql}";
+        $nombreArchivo = "respaldo_smartphoneworld_{$fecha}.zip";
         $rutaCompleta = "{$this->backupDir}/{$nombreArchivo}";
 
         $driver = DB::getDriverName();
@@ -48,23 +57,8 @@ class ServicioRespaldos
             $sql .= "PRAGMA foreign_keys = OFF;\n\n";
         }
 
-        $allTables = Schema::getTableListing();
-        $tables = [];
-
-        foreach ($allTables as $t) {
-            if (str_contains($t, '.')) {
-                [$tableDb, $tablePure] = explode('.', $t, 2);
-                if ($tableDb === $dbName) {
-                    $tables[] = $tablePure;
-                }
-            } else {
-                $tables[] = $t;
-            }
-        }
-
-        if (empty($tables)) {
-            $tables = $allTables;
-        }
+        // Tablas de la base actual, sin prefijo de esquema ("main.users" en SQLite)
+        $tables = Schema::getTableListing(schemaQualified: false);
 
         foreach ($tables as $table) {
             // Estructura
@@ -94,25 +88,24 @@ class ServicioRespaldos
             if ($count > 0) {
                 $sql .= "-- Datos de tabla: {$table} ({$count} registros)\n";
 
-                DB::table($table)->chunk(150, function ($rows) use (&$sql, $table) {
-                    foreach ($rows as $row) {
-                        $rowArray = (array) $row;
-                        $columns = array_keys($rowArray);
-                        $escapedColumns = array_map(fn($col) => "`{$col}`", $columns);
+                // cursor(): recorre la tabla sin exigir orderBy (chunk() fallaba con datos)
+                foreach (DB::table($table)->cursor() as $row) {
+                    $rowArray = (array) $row;
+                    $columns = array_keys($rowArray);
+                    $escapedColumns = array_map(fn($col) => "`{$col}`", $columns);
 
-                        $escapedValues = array_map(function ($val) {
-                            if (is_null($val)) {
-                                return 'NULL';
-                            }
-                            if (is_numeric($val) && !is_string($val)) {
-                                return $val;
-                            }
-                            return "'" . addslashes((string) $val) . "'";
-                        }, array_values($rowArray));
+                    $escapedValues = array_map(function ($val) {
+                        if (is_null($val)) {
+                            return 'NULL';
+                        }
+                        if (is_numeric($val) && !is_string($val)) {
+                            return $val;
+                        }
+                        return "'" . addslashes((string) $val) . "'";
+                    }, array_values($rowArray));
 
-                        $sql .= "INSERT INTO `{$table}` (" . implode(', ', $escapedColumns) . ") VALUES (" . implode(', ', $escapedValues) . ");\n";
-                    }
-                });
+                    $sql .= "INSERT INTO `{$table}` (" . implode(', ', $escapedColumns) . ") VALUES (" . implode(', ', $escapedValues) . ");\n";
+                }
                 $sql .= "\n";
             }
         }
@@ -123,7 +116,20 @@ class ServicioRespaldos
             $sql .= "PRAGMA foreign_keys = ON;\n";
         }
 
-        File::put($rutaCompleta, $sql);
+        File::put($rutaSql, $sql);
+        unset($sql);
+
+        try {
+            $zip = new \ZipArchive();
+            if ($zip->open($rutaCompleta, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) !== true
+                || ! $zip->addFile($rutaSql, $nombreSql)
+                || ! $zip->setEncryptionName($nombreSql, \ZipArchive::EM_AES_256, $password)
+                || ! $zip->close()) {
+                throw new \RuntimeException('No se pudo crear el ZIP cifrado del respaldo.');
+            }
+        } finally {
+            File::delete($rutaSql);
+        }
 
         $tamano = File::size($rutaCompleta);
 
@@ -149,7 +155,8 @@ class ServicioRespaldos
         $respaldos = [];
 
         foreach ($archivos as $archivo) {
-            if ($archivo->getExtension() === 'sql') {
+            // .zip cifrados; .sql de respaldos anteriores a la versión cifrada
+            if (in_array($archivo->getExtension(), ['zip', 'sql'], true)) {
                 $tamano = $archivo->getSize();
                 $respaldos[] = [
                     'nombre' => $archivo->getFilename(),
@@ -195,7 +202,7 @@ class ServicioRespaldos
         }
 
         return response()->download($ruta, $sanitizado, [
-            'Content-Type' => 'application/sql',
+            'Content-Type' => str_ends_with($sanitizado, '.zip') ? 'application/zip' : 'application/sql',
         ]);
     }
 
