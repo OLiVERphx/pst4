@@ -78,9 +78,8 @@ class ServicioPedidos
                 }
             }
 
-            // Crear pedido
-            $order = Order::create([
-                'numero_pedido' => Order::generarNumeroPedido(),
+            // Crear pedido (con reintento si otro pedido simultáneo tomó el mismo número)
+            $datosPedido = [
                 'usuario_id'    => $usuarioId,
                 'tipo'          => collect($detalles)->contains(fn($x) => isset($x['producto']) && ($x['producto']->precio_mayor < $x['producto']->precio_detal) && false) ? 'mayor' : 'detal',
                 'estado'        => 'pendiente',
@@ -94,7 +93,17 @@ class ServicioPedidos
                 'entrega_ciudad' => $datosEntrega['entrega_ciudad'] ?? null,
                 'entrega_notas' => $notas,
                 'canal' => $canal,
-            ]);
+            ];
+            for ($intento = 1; ; $intento++) {
+                try {
+                    $order = Order::create(['numero_pedido' => Order::generarNumeroPedido()] + $datosPedido);
+                    break;
+                } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                    if ($intento >= 3) {
+                        throw $e;
+                    }
+                }
+            }
 
             // Crear items y ajustar stock
             foreach ($detalles as $d) {

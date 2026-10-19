@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -87,8 +88,27 @@ class Order extends Model
         return $q->where('estado', 'pago_subido');
     }
 
+    /**
+     * Siguiente número de pedido del año: SW-2026-0001, SW-2026-0002...
+     * Antes eran 4 dígitos al azar sin comprobar duplicados: con unos cientos de
+     * pedidos al año chocaban y el checkout fallaba. Se bloquea el último número
+     * (lockForUpdate) para que dos pedidos simultáneos no tomen el mismo; quien
+     * crea el pedido reintenta igualmente si choca (ServicioPedidos).
+     */
     public static function generarNumeroPedido(): string
     {
-        return 'SW-' . date('Y') . '-' . str_pad((string)random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+        $prefijo = 'SW-' . date('Y') . '-';
+
+        // Incluye pedidos eliminados (soft delete): su número sigue ocupado
+        $ultimo = DB::table('pedidos')
+            ->where('numero_pedido', 'like', $prefijo . '%')
+            ->orderByRaw('LENGTH(numero_pedido) DESC')
+            ->orderByDesc('numero_pedido')
+            ->lockForUpdate()
+            ->value('numero_pedido');
+
+        $siguiente = $ultimo ? ((int) substr($ultimo, strlen($prefijo))) + 1 : 1;
+
+        return $prefijo . str_pad((string) $siguiente, 4, '0', STR_PAD_LEFT);
     }
 }
