@@ -38,6 +38,8 @@ return [
     // Microservicio de predicciones (Python/FastAPI). Vacío = desactivado.
     'ml' => [
         'url' => env('ML_SERVICE_URL'),
+        // Misma clave que ML_API_KEY en ml-service/.env
+        'key' => env('ML_API_KEY'),
     ],
 
 ];

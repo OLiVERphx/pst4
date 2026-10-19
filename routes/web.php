@@ -63,6 +63,10 @@ Route::middleware(['auth', 'active', 'admin'])
             ->name('reports.index')
             ->middleware('can:reportes.ver');
 
+        Route::post('reports/ml/recalcular', [\App\Http\Controllers\Admin\ReportController::class, 'recalcularMl'])
+            ->name('reports.ml.recalcular')
+            ->middleware(['can:reportes.ver', 'throttle:6,1']);
+
         // Exportar reportes (CSV por defecto). Excel solo si librería instalada.
         Route::get('reports/export', [\App\Http\Controllers\Admin\ReportController::class, 'export'])
             ->name('reports.export')

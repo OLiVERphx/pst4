@@ -1,12 +1,15 @@
-version: '3.8'
 services:
   ml-service:
     build: ./ml-service
+    # Solo accesible desde el propio servidor
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
     restart: unless-stopped
-    volumes:
-      - ./ml-service/data:/app/data:ro
+    # ML_DB_*, ML_API_KEY (ver ml-service/.env.example). Dentro del contenedor la base del
+    # equipo anfitrión no es 127.0.0.1: usar ML_DB_HOST=host.docker.internal
+    env_file: ./ml-service/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 # Nota: el servicio Laravel no se construye aquí por simplicidad; el objetivo es
 # proporcionar un despliegue replicable del microservicio ML junto al proyecto.

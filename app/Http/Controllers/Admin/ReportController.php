@@ -12,15 +12,19 @@ use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
+    private const CACHE_REPORTE_ML = 'ml_reporte';
+    private const CACHE_ML_CAIDO = 'ml_service_caido';
 
     /**
      * Mostrar reporte principal extendido con comparativos y proyecciones.
      */
     public function index()
     {
-        // Top productos por cantidad vendida (mantener lógica existente)
+        // Top productos por cantidad vendida (solo pedidos pagados: los cancelados no son ventas)
         $topProducts = DB::table('items_pedido')
             ->join('products', 'items_pedido.producto_id', '=', 'products.id')
+            ->join('pedidos', 'items_pedido.pedido_id', '=', 'pedidos.id')
+            ->whereIn('pedidos.estado', Order::ESTADOS_PAGADOS)
             ->select('products.id', 'products.nombre as producto', DB::raw('SUM(items_pedido.cantidad) as total'))
             ->groupBy('products.id', 'products.nombre')
             ->orderByDesc('total')
@@ -185,16 +189,16 @@ class ReportController extends Controller
 
         // Para evitar exponer información sensible sin permiso, la vista debe pedir 'pagos.ver' antes de mostrar detalles.
 
-        // Microservicio ML (Python/FastAPI) opcional: solo se consulta si ML_SERVICE_URL
-        // está configurado. Si no responde, se recuerda 5 minutos para no demorar cada
-        // carga del panel esperando a un servicio caído.
+        // Microservicio ML (Python/FastAPI, carpeta ml-service): pronóstico de demanda y
+        // segmentación de clientes. Opcional: solo se consulta si ML_SERVICE_URL está configurado.
         $mlReport = $this->consultarServicioMl();
+        $hayVentasDemo = Order::where('numero_pedido', 'like', 'DEMO-%')->exists();
 
         return view('admin.reports.index', compact(
             'topProducts', 'lowStock', 'ventasPorCategoria',
             'totalOrders', 'totalFacturado', 'ticketPromedio', 'totalClients',
             'facturadoThis','facturadoPrev','facturadoVariationPct',
-            'categoriaComparatives','stockProjection','paymentAnomaliesByReason', 'mlReport'
+            'categoriaComparatives','stockProjection','paymentAnomaliesByReason', 'mlReport', 'hayVentasDemo'
         ));
     }
 
@@ -397,26 +401,96 @@ class ReportController extends Controller
         return $rows;
     }
 
-    private function consultarServicioMl(): ?array
+    /** Descarta el reporte guardado y pide al microservicio que recalcule. */
+    public function recalcularMl()
+    {
+        Cache::forget(self::CACHE_REPORTE_ML);
+        Cache::forget(self::CACHE_ML_CAIDO);
+
+        if ($base = config('services.ml.url')) {
+            try {
+                $this->clienteMl()->timeout(30)->post(rtrim($base, '/') . '/api/ml/recalcular')->throw();
+            } catch (\Exception $e) {
+                Log::warning('ML service: no se pudo recalcular: ' . $e->getMessage());
+                return back()->with('error', 'El servicio de analítica no respondió. Revisa que esté encendido.');
+            }
+        }
+
+        return back()->with('success', 'Analítica recalculada.');
+    }
+
+    /**
+     * Reporte del microservicio con los nombres de productos y clientes agregados
+     * (el servicio solo conoce IDs: su usuario de base de datos no puede leer datos personales).
+     *
+     * estado: sin_configurar | caido | clave_invalida | ok
+     */
+    private function consultarServicioMl(): array
     {
         $base = config('services.ml.url');
-        if (! $base || Cache::get('ml_service_caido')) {
-            return null;
+        if (! $base) {
+            return ['estado' => 'sin_configurar'];
+        }
+        if ($estado = Cache::get(self::CACHE_ML_CAIDO)) {
+            return ['estado' => $estado];
         }
 
-        $url = rtrim($base, '/') . '/api/ml/reports';
-        try {
-            $response = Http::connectTimeout(1)->timeout(3)->get($url);
-            if ($response->successful()) {
-                return $response->json();
+        $reporte = Cache::get(self::CACHE_REPORTE_ML);
+        if (! $reporte) {
+            $estado = 'caido';
+            try {
+                $response = $this->clienteMl()->get(rtrim($base, '/') . '/api/ml/reports');
+                if ($response->successful()) {
+                    $reporte = $response->json();
+                    Cache::put(self::CACHE_REPORTE_ML, $reporte, now()->addMinutes(10));
+                } else {
+                    $estado = $response->status() === 401 ? 'clave_invalida' : 'caido';
+                    Log::warning('ML service returned non-200', ['status' => $response->status()]);
+                }
+            } catch (\Exception $e) {
+                Log::warning('ML service not available: ' . $e->getMessage());
             }
-            Log::warning('ML service returned non-200', ['status' => $response->status(), 'url' => $url]);
-        } catch (\Exception $e) {
-            Log::warning('ML service not available: ' . $e->getMessage());
+
+            if (! $reporte) {
+                // Se recuerda 5 minutos para no demorar cada carga esperando a un servicio caído
+                Cache::put(self::CACHE_ML_CAIDO, $estado, now()->addMinutes(5));
+                return ['estado' => $estado];
+            }
         }
 
-        Cache::put('ml_service_caido', true, now()->addMinutes(5));
+        return ['estado' => 'ok'] + $this->agregarNombres($reporte);
+    }
 
-        return null;
+    private function clienteMl(): \Illuminate\Http\Client\PendingRequest
+    {
+        return Http::withHeaders(['X-Api-Key' => (string) config('services.ml.key')])
+            ->acceptJson()
+            ->connectTimeout(1)
+            ->timeout(5);
+    }
+
+    private function agregarNombres(array $reporte): array
+    {
+        $demanda = $reporte['demanda']['items'] ?? [];
+        $productos = Product::whereIn('id', array_column($demanda, 'producto_id'))->pluck('nombre', 'id');
+        foreach ($demanda as &$item) {
+            $item['producto'] = $productos[$item['producto_id']] ?? ('Producto #' . $item['producto_id']);
+        }
+        unset($item);
+        $reporte['demanda']['items'] = $demanda;
+
+        $segmentados = $reporte['segmentos']['items'] ?? [];
+        $clientes = \App\Models\User::whereIn('id', array_column($segmentados, 'cliente_id'))
+            ->get(['id', 'name', 'apellido', 'email'])
+            ->keyBy('id');
+        foreach ($segmentados as &$item) {
+            $c = $clientes[$item['cliente_id']] ?? null;
+            $item['cliente'] = $c ? trim($c->name . ' ' . $c->apellido) : ('Cliente #' . $item['cliente_id']);
+            $item['email'] = $c?->email;
+        }
+        unset($item);
+        $reporte['segmentos']['items'] = $segmentados;
+
+        return $reporte;
     }
 }
