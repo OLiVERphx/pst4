@@ -3,3 +3,5 @@ uvicorn==0.54.0
 pandas==3.0.6
 numpy==2.5.4
 PyMySQL==1.2.3
+# MySQL 8 autentica con caching_sha2_password: PyMySQL lo necesita para conectarse
+cryptography==50.0.2

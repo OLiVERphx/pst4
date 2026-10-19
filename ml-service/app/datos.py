@@ -4,12 +4,15 @@ Lectura de datos desde MySQL con el usuario de solo lectura sw_ml
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 import pandas as pd
 import pymysql
 
 from .config import ESTADOS_PAGADOS, Config
+
+log = logging.getLogger("ml-service")
 
 
 @dataclass
@@ -91,5 +94,8 @@ def comprobar_conexion(cfg: Config) -> bool:
         conexion = conectar(cfg)
         conexion.close()
         return True
-    except Exception:
+    except Exception as e:
+        # El motivo va a la consola de uvicorn, no a la respuesta (/health no pide clave)
+        log.warning("Sin conexión a MySQL como %s@%s/%s: %s: %s", cfg.db_username, cfg.db_host,
+                    cfg.db_database, type(e).__name__, e)
         return False
