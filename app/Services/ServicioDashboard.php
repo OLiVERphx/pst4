@@ -33,6 +33,22 @@ class ServicioDashboard
         // Cantidad de pedidos en el mes
         $pedidosMes = Order::whereBetween('created_at', [$startOfMonth, $endOfMonth])->count();
 
+        // Mismo tramo del mes anterior (del día 1 al mismo día), para comparar de forma justa
+        $inicioMesAnterior = $startOfMonth->copy()->subMonthNoOverflow();
+        $finTramoAnterior = $inicioMesAnterior->copy()->addDays($now->day - 1)->endOfDay()->min($inicioMesAnterior->copy()->endOfMonth());
+        $ventasMesAnterior = Order::whereIn('estado', Order::ESTADOS_PAGADOS)
+            ->whereBetween('created_at', [$inicioMesAnterior, $finTramoAnterior])
+            ->sum('total');
+        $pedidosMesAnterior = Order::whereBetween('created_at', [$inicioMesAnterior, $finTramoAnterior])->count();
+        $variacion = fn ($actual, $anterior) => $anterior > 0 ? round(($actual - $anterior) / $anterior * 100, 1) : null;
+
+        // Productos activos en o bajo su stock mínimo (los 5 más críticos)
+        $productosStockBajo = Product::where('activo', true)
+            ->whereColumn('stock', '<=', 'stock_minimo')
+            ->orderByRaw('stock - stock_minimo')
+            ->limit(5)
+            ->get(['id', 'nombre', 'codigo', 'stock', 'stock_minimo']);
+
         // Total de clientes (usuarios con rol 'cliente')
         $totalClientes = DB::table('users')
             ->join('roles', 'users.rol_id', '=', 'roles.id')
@@ -73,13 +89,17 @@ class ServicioDashboard
                 ->whereBetween('created_at', [$weekStart, $weekEnd])
                 ->sum('total');
             $ventasSemanales[] = [
-                'label' => $weekStart->format('Y-m-d'),
+                'label' => $weekStart->format('d/m'),
                 'total' => (float)$sum,
             ];
         }
 
         return [
             'total_ventas_mes' => (float)$totalVentasMes,
+            'total_ventas_mes_bs' => \App\Services\ServicioPrecios::convertirFromUsd((float) $totalVentasMes, 'bs'),
+            'ventas_mes_trend' => $variacion((float) $totalVentasMes, (float) $ventasMesAnterior),
+            'pedidos_mes_trend' => $variacion($pedidosMes, $pedidosMesAnterior),
+            'productos_stock_bajo' => $productosStockBajo,
             'pedidos_mes' => (int)$pedidosMes,
             'total_clientes' => (int)$totalClientes,
             'pedidos_pendientes' => (int)$pedidosPendientes,
