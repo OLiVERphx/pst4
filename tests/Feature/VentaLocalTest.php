@@ -39,15 +39,15 @@ class VentaLocalTest extends TestCase
         $vendedor->givePermissionTo('pedidos.crear');
 
         // Crear producto
-        DB::table('marcas')->insert(['nombre' => 'Marca prueba']);
-        DB::table('categorias')->insert(['nombre' => 'Categoria prueba', 'slug' => 'categoria-prueba', 'activo' => true]);
+        $marcaId = DB::table('marcas')->insertGetId(['nombre' => 'Marca prueba']);
+        $categoriaId = DB::table('categorias')->insertGetId(['nombre' => 'Categoria prueba', 'slug' => 'categoria-prueba', 'activo' => true]);
         $product = Product::create([
             'codigo' => 'TL001',
             'nombre' => 'Producto test',
             'slug' => 'producto-test',
             'descripcion' => 'Descripción',
-            'marca_id' => 1,
-            'categoria_id' => 1,
+            'marca_id' => $marcaId,
+            'categoria_id' => $categoriaId,
             'precio_detal' => 100.00,
             'precio_mayor' => 90.00,
             'precio_costo' => 60.00,
@@ -126,15 +126,15 @@ class VentaLocalTest extends TestCase
         $vendedor->givePermissionTo('pedidos.crear');
 
         // Crear producto con min_cantidad_mayor = 10
-        DB::table('marcas')->insert(['nombre' => 'Marca prueba']);
-        DB::table('categorias')->insert(['nombre' => 'Categoria prueba', 'slug' => 'categoria-prueba', 'activo' => true]);
+        $marcaId = DB::table('marcas')->insertGetId(['nombre' => 'Marca prueba']);
+        $categoriaId = DB::table('categorias')->insertGetId(['nombre' => 'Categoria prueba', 'slug' => 'categoria-prueba', 'activo' => true]);
         $product = Product::create([
             'codigo' => 'TL002',
             'nombre' => 'Producto mayor test',
             'slug' => 'producto-mayor-test',
             'descripcion' => 'Descripción',
-            'marca_id' => 1,
-            'categoria_id' => 1,
+            'marca_id' => $marcaId,
+            'categoria_id' => $categoriaId,
             'precio_detal' => 60.00,
             'precio_mayor' => 50.00,
             'precio_costo' => 30.00,

@@ -24,13 +24,12 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-        $existing = \DB::table('roles')->where('nombre', 'cliente')->first();
-        if ($existing) {
-            $rolId = $existing->id;
-        } elseif (!\DB::table('roles')->where('id', 3)->exists()) {
-            $rolId = \DB::table('roles')->insertGetId(['id' => 3, 'nombre' => 'cliente']);
-        } else {
-            $rolId = 3;
+        // roles.id no es autoincremental: insertGetId() devuelve 0 en MySQL, así que
+        // se inserta con id explícito y luego se lee
+        $rolId = \DB::table('roles')->where('nombre', 'cliente')->value('id');
+        if (! $rolId) {
+            \DB::table('roles')->insertOrIgnore(['id' => 3, 'nombre' => 'cliente']);
+            $rolId = \DB::table('roles')->where('nombre', 'cliente')->value('id') ?? 3;
         }
 
         return [

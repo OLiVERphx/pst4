@@ -14,6 +14,8 @@ class ValidarMinimoMayorTest extends TestCase
     use RefreshDatabase;
 
     protected $clienteId;
+    protected $marcaId;
+    protected $categoriaId;
 
     protected function setUp(): void
     {
@@ -27,8 +29,8 @@ class ValidarMinimoMayorTest extends TestCase
         ]);
 
         // Asegurar existencia de marca y categoría referenciadas por FK
-        \DB::table('marcas')->insert(['nombre' => 'Marca prueba']);
-        \DB::table('categorias')->insert(['nombre' => 'Categoria prueba', 'slug' => 'categoria-prueba', 'activo' => true]);
+        $this->marcaId = \DB::table('marcas')->insertGetId(['nombre' => 'Marca prueba']);
+        $this->categoriaId = \DB::table('categorias')->insertGetId(['nombre' => 'Categoria prueba', 'slug' => 'categoria-prueba', 'activo' => true]);
 
         // Asegurar existencia del rol requerido por FK
         if (!\DB::table('roles')->where('id',1)->exists()) {
@@ -71,8 +73,8 @@ class ValidarMinimoMayorTest extends TestCase
             'nombre' => 'Producto mayor',
             'slug' => 'producto-mayor',
             'descripcion' => 'Descripción',
-            'marca_id' => 1,
-            'categoria_id' => 1,
+            'marca_id' => $this->marcaId,
+            'categoria_id' => $this->categoriaId,
             'precio_detal' => 15.00,
             'precio_mayor' => 12.00,
             'precio_costo' => 8.00,
@@ -111,8 +113,8 @@ class ValidarMinimoMayorTest extends TestCase
             'nombre' => 'Producto detal',
             'slug' => 'producto-detal',
             'descripcion' => 'Descripción',
-            'marca_id' => 1,
-            'categoria_id' => 1,
+            'marca_id' => $this->marcaId,
+            'categoria_id' => $this->categoriaId,
             'precio_detal' => 200.00,
             'precio_mayor' => 180.00,
             'precio_costo' => 100.00,
@@ -130,8 +132,8 @@ class ValidarMinimoMayorTest extends TestCase
             'nombre' => 'Producto pequeño mayor',
             'slug' => 'producto-mayor-peq',
             'descripcion' => 'Descripción',
-            'marca_id' => 1,
-            'categoria_id' => 1,
+            'marca_id' => $this->marcaId,
+            'categoria_id' => $this->categoriaId,
             'precio_detal' => 30.00,
             'precio_mayor' => 10.00,
             'precio_costo' => 5.00,
@@ -170,8 +172,8 @@ class ValidarMinimoMayorTest extends TestCase
             'nombre' => 'Producto mayor grande',
             'slug' => 'producto-mayor-grande',
             'descripcion' => 'Descripción',
-            'marca_id' => 1,
-            'categoria_id' => 1,
+            'marca_id' => $this->marcaId,
+            'categoria_id' => $this->categoriaId,
             'precio_detal' => 6.00,
             'precio_mayor' => 5.00,
             'precio_costo' => 3.00,

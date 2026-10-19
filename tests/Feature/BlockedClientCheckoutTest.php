@@ -20,7 +20,9 @@ class BlockedClientCheckoutTest extends TestCase
         // Crear rol 'cliente' asegurando un id para tablas que usan id no auto-incremental
         $role = Role::where('nombre', 'cliente')->first();
         if (! $role) {
-            $role = Role::create(['id' => 99, 'nombre' => 'cliente']);
+            // roles.id no es autoincremental: se inserta con id explícito
+            \Illuminate\Support\Facades\DB::table('roles')->insert(['id' => 99, 'nombre' => 'cliente']);
+            $role = Role::where('nombre', 'cliente')->first();
         }
 
         // Crear usuario con bloqueo activo en memoria (no persistir en BD) — suficiente para la comprobación de bloqueo
