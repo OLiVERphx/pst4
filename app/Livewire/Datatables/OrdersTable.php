@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Datatables;
 
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Order;
@@ -17,6 +18,8 @@ class OrdersTable extends Component
 {
     use WithPagination;
 
+    // ?q= en la URL: el buscador de la barra superior enlaza aquí con el término
+    #[Url(as: 'q', except: '')]
     public $search = '';
     public $statusFilter = '';
     public $typeFilter = '';
@@ -31,10 +34,14 @@ class OrdersTable extends Component
 
         if ($this->search) {
             $q = $this->search;
-            $query->where('numero_pedido', 'like', "%{$q}%")
-                ->orWhereHas('user', function ($sub) use ($q) {
-                    $sub->where('name', 'like', "%{$q}%");
-                });
+            // Agrupado: sin el paréntesis el OR se saltaba los filtros de estado y tipo
+            $query->where(function ($w) use ($q) {
+                $w->where('numero_pedido', 'like', "%{$q}%")
+                    ->orWhereHas('user', function ($sub) use ($q) {
+                        $sub->where('name', 'like', "%{$q}%")
+                            ->orWhere('apellido', 'like', "%{$q}%");
+                    });
+            });
         }
 
         if ($this->statusFilter) {

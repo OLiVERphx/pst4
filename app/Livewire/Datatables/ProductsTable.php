@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Datatables;
 
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Product;
@@ -21,6 +22,8 @@ class ProductsTable extends Component
 {
     use WithPagination;
 
+    // ?q= en la URL: el buscador de la barra superior enlaza aquí con el término
+    #[Url(as: 'q', except: '')]
     public $search = '';
     public $categoryFilter = '';
     public $brandFilter = '';

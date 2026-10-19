@@ -85,6 +85,7 @@ class AccountProfileTest extends TestCase
             'telefono'  => '0414-9876543',
             'ciudad'    => 'Trujillo',
             'direccion' => 'Av. Bolívar, edif. Los Andes, piso 2',
+            'password_actual' => 'secreto123', // cambia el correo
         ]);
 
         $response->assertRedirect(route('web.account'));
@@ -142,5 +143,64 @@ class AccountProfileTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['email']);
+    }
+
+    /**
+     * Cambiar el correo exige la contraseña actual (evita robar la cuenta con una sesión ajena).
+     */
+    public function test_cambiar_correo_sin_contrasena_actual_falla()
+    {
+        $response = $this->actingAs($this->cliente)->put('/mi-cuenta/perfil', [
+            'name' => 'Carlos', 'apellido' => 'Mendoza', 'email' => 'atacante@ejemplo.com',
+        ]);
+
+        $response->assertSessionHasErrors(['password_actual']);
+        $this->assertEquals('carlos@ejemplo.com', $this->cliente->fresh()->email);
+    }
+
+    /**
+     * Cambiar la contraseña con la actual equivocada falla y no la modifica.
+     */
+    public function test_cambiar_contrasena_con_la_actual_equivocada_falla()
+    {
+        $response = $this->actingAs($this->cliente)->put('/mi-cuenta/perfil', [
+            'name' => 'Carlos', 'apellido' => 'Mendoza', 'email' => 'carlos@ejemplo.com',
+            'password_actual' => 'no-es-esta',
+            'password' => 'nuevaClave99', 'password_confirmation' => 'nuevaClave99',
+        ]);
+
+        $response->assertSessionHasErrors(['password_actual']);
+        $this->assertTrue(Hash::check('secreto123', $this->cliente->fresh()->password));
+    }
+
+    /**
+     * Con la contraseña actual correcta se cambia y queda en la auditoría.
+     */
+    public function test_cambiar_contrasena_con_la_actual_correcta()
+    {
+        $response = $this->actingAs($this->cliente)->put('/mi-cuenta/perfil', [
+            'name' => 'Carlos', 'apellido' => 'Mendoza', 'email' => 'carlos@ejemplo.com',
+            'password_actual' => 'secreto123',
+            'password' => 'nuevaClave99', 'password_confirmation' => 'nuevaClave99',
+        ]);
+
+        $response->assertRedirect(route('web.account'));
+        $response->assertSessionHasNoErrors();
+        $this->assertTrue(Hash::check('nuevaClave99', $this->cliente->fresh()->password));
+        $this->assertDatabaseHas('bitacora_auditoria', ['accion' => 'usuario.password_cambiada', 'usuario_id' => $this->cliente->id]);
+    }
+
+    /**
+     * Los demás datos (teléfono, dirección) se cambian sin pedir la contraseña.
+     */
+    public function test_cambiar_otros_datos_no_pide_contrasena()
+    {
+        $response = $this->actingAs($this->cliente)->put('/mi-cuenta/perfil', [
+            'name' => 'Carlos', 'apellido' => 'Mendoza', 'email' => 'carlos@ejemplo.com',
+            'telefono' => '0426-5554433',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertEquals('0426-5554433', $this->cliente->fresh()->telefono);
     }
 }

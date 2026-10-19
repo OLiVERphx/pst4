@@ -111,14 +111,20 @@
             </div>
 
             <div class="form-group">
+              <label class="form-label" for="password_actual">Contraseña actual</label>
+              <input class="form-input" id="password_actual" type="password" name="password_actual" autocomplete="current-password" placeholder="Solo si cambias el correo o la contraseña">
+              @error('password_actual')<div style="color:#EF4444;font-size:.8rem;margin-top:.3rem">{{ $message }}</div>@enderror
+            </div>
+
+            <div class="form-group">
               <label class="form-label" for="password">Nueva contraseña</label>
-              <input class="form-input" id="password" type="password" name="password" placeholder="Dejar en blanco para no cambiarla">
+              <input class="form-input" id="password" type="password" name="password" autocomplete="new-password" placeholder="Dejar en blanco para no cambiarla">
               @error('password')<div style="color:#EF4444;font-size:.8rem;margin-top:.3rem">{{ $message }}</div>@enderror
             </div>
 
             <div class="form-group">
               <label class="form-label" for="password_confirmation">Confirmar nueva contraseña</label>
-              <input class="form-input" id="password_confirmation" type="password" name="password_confirmation" placeholder="Repite la nueva contraseña">
+              <input class="form-input" id="password_confirmation" type="password" name="password_confirmation" autocomplete="new-password" placeholder="Repite la nueva contraseña">
             </div>
           </div>
 

@@ -187,10 +187,12 @@ function adminApp() {
             <h2 class="text-lg font-semibold text-[#F1F5F9]">@yield('pageTitle', 'Panel')</h2>
 
             <div class="flex-1 flex items-center justify-center">
-                <div class="relative w-full max-w-xs">
+                <form method="GET" action="{{ route('admin.buscar') }}" role="search" class="relative w-full max-w-xs">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AEC0]">🔍</span>
-                    <input type="text" placeholder="Buscar..." class="w-full pl-10 pr-4 py-1.5 bg-[#475569] border border-[#475569] rounded-lg text-sm text-[#F1F5F9] focus:border-[#1D4ED8]" />
-                </div>
+                    <input type="search" name="q" value="{{ request()->routeIs('admin.buscar') ? request('q') : '' }}" minlength="2" maxlength="100"
+                           placeholder="Buscar pedido, producto o cliente..." aria-label="Buscar en el panel"
+                           class="w-full pl-10 pr-4 py-1.5 bg-[#475569] border border-[#475569] rounded-lg text-sm text-[#F1F5F9] focus:border-[#1D4ED8]" />
+                </form>
             </div>
 
             <div class="ml-auto flex items-center gap-3">

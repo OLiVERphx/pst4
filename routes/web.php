@@ -47,6 +47,9 @@ Route::middleware(['auth', 'active', 'admin'])
             ->name('clients.lista')
             ->middleware('can:clientes.ver');
 
+        // Buscador de la barra superior (cada sección filtra por permisos)
+        Route::get('buscar', \App\Http\Controllers\Admin\BuscarController::class)->name('buscar');
+
         // Cuenta propia: cualquier usuario del panel
         Route::get('perfil', [\App\Http\Controllers\Admin\PerfilController::class, 'show'])->name('perfil');
         Route::put('perfil/password', [\App\Http\Controllers\Admin\PerfilController::class, 'actualizarPassword'])

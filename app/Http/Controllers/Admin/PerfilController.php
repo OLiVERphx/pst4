@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\ServicioAuditoria;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
 
 /**
@@ -40,12 +39,7 @@ class PerfilController extends Controller
         $user->save();
 
         // Cierra las demás sesiones abiertas con la contraseña anterior
-        if (config('session.driver') === 'database') {
-            DB::table(config('session.table', 'sessions'))
-                ->where('user_id', $user->id)
-                ->where('id', '!=', $request->session()->getId())
-                ->delete();
-        }
+        $user->cerrarOtrasSesiones($request->session()->getId());
         $request->session()->regenerate();
 
         ServicioAuditoria::registrar('usuario.password_cambiada', $user);

@@ -141,4 +141,15 @@ class User extends Authenticatable
         return isset($this->notificacionesDisponibles()[$tipo])
             && ($this->preferencias_notificacion[$tipo] ?? true);
     }
+
+    /** Cierra las sesiones abiertas en otros equipos (tras cambiar la contraseña). */
+    public function cerrarOtrasSesiones(string $sesionActual): void
+    {
+        if (config('session.driver') === 'database') {
+            \Illuminate\Support\Facades\DB::table(config('session.table', 'sessions'))
+                ->where('user_id', $this->id)
+                ->where('id', '!=', $sesionActual)
+                ->delete();
+        }
+    }
 }
