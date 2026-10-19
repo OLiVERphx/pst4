@@ -72,6 +72,7 @@ class ServicioOcrComprobantes
             'identificacion' => null,
             'banco' => null,
             'nombre' => null,
+            'destino' => null,
         ];
 
         if (preg_match('/pago\s*m[oó0]vil/iu', $t)) {
@@ -106,6 +107,11 @@ class ServicioOcrComprobantes
         if (preg_match('/\b(01\d{2}|0[2-9]\d{2})\s*[-–—]\s*([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ .]{2,})/u', $t, $m)) {
             // Con el código basta: el nombre se toma de la lista oficial (el OCR lo deforma más)
             $campos['banco'] = $m[1] . ' - ' . (config("pagos.bancos.{$m[1]}") ?? trim($m[2]));
+        }
+
+        // Destino: teléfono (pago móvil) o cuenta enmascarada (transferencia, "0102****4485")
+        if (preg_match('/Destino\s*:?\s*([0-9*]{6,20})/iu', $t, $m)) {
+            $campos['destino'] = $m[1];
         }
 
         if (preg_match('/Nombre\s*:?\s*([^\n\r]{3,80})/iu', $t, $m)) {

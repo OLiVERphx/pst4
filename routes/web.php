@@ -55,6 +55,10 @@ Route::middleware(['auth', 'active', 'admin'])
             ->name('configuracion.update')
             ->middleware('can:configuracion.editar');
 
+        Route::post('settings/datos-tienda', [\App\Http\Controllers\Admin\ConfiguracionController::class, 'actualizarDatosTienda'])
+            ->name('configuracion.datos_tienda')
+            ->middleware('can:configuracion.editar');
+
         Route::get('reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])
             ->name('reports.index')
             ->middleware('can:reportes.ver');

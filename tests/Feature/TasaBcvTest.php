@@ -60,6 +60,7 @@ class TasaBcvTest extends TestCase
     public function el_checkout_muestra_la_tasa_bcv_vigente()
     {
         $this->seed();
+        $this->configurarDatosDePago();
         ServicioPrecios::registrarTasaBcv(52.75, now());
         $cliente = User::where('email', '!=', 'admin@swworld.com')->firstOrFail();
 

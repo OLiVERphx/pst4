@@ -23,7 +23,9 @@ class CheckoutController extends Controller
         $user = auth()->user();
         $tasaBcv = ServicioPrecios::tasaBcvEn(now());
         $fechaTasa = \App\Models\TasaBcv::vigenteEn()?->fecha;
-        return view('web.checkout', compact('user', 'tasaBcv', 'fechaTasa'));
+        $datosPago = \App\Models\Configuracion::datosPago();
+        $metodos = \App\Models\Configuracion::metodosPagoDisponibles();
+        return view('web.checkout', compact('user', 'tasaBcv', 'fechaTasa', 'datosPago', 'metodos'));
     }
 
     /**
@@ -101,7 +103,8 @@ class CheckoutController extends Controller
             'entrega_telefono'  => 'required|string|max:20',
             'entrega_direccion' => 'required_if:tipo_entrega,delivery|nullable|string',
             'entrega_ciudad'    => 'required_if:tipo_entrega,delivery|nullable|string|max:80',
-            'metodo_pago'       => 'required|in:transferencia,pagomovil,binance,fisico',
+            // Solo los métodos que la tienda tiene configurados en Configuración
+            'metodo_pago'       => ['required', \Illuminate\Validation\Rule::in(array_keys(array_filter(\App\Models\Configuracion::metodosPagoDisponibles())))],
             'comprobante'       => 'nullable|file|mimes:jpeg,jpg,png,pdf|max:5120',
             'numero_referencia' => 'nullable|string|max:100',
             'fecha_pago'        => 'nullable|date_format:'.config('pagos.fecha_format','Y-m-d').'|before_or_equal:today',

@@ -117,6 +117,7 @@ class ServicioValidacionPagos
             'referencia_unica' => null,
             'ocr_coincide' => null,
             'ocr_diferencias' => [],
+            'destino_coincide' => null,
             'moneda_comparada' => null,
             'tasa_bcv' => null,
             'monto_bs_esperado' => null,
@@ -208,9 +209,16 @@ class ServicioValidacionPagos
             }
         }
 
+        // ¿El dinero fue a la tienda? Solo si el OCR leyó un destino con forma válida
+        // (puede leer mal; por eso un desacuerdo es alerta y no "sospechoso")
+        if ($ocr && ! empty($ocr['destino'])) {
+            $result['destino_coincide'] = $this->destinoEsDeLaTienda($payment->metodo, $ocr['destino']);
+        }
+
         if ($result['monto_coincide'] === false) {
             $result['nivel_riesgo_coherencia'] = 'high';
-        } elseif ($result['fecha_valida'] === false || $result['referencia_unica'] === false || $result['ocr_coincide'] === false) {
+        } elseif ($result['fecha_valida'] === false || $result['referencia_unica'] === false || $result['ocr_coincide'] === false
+            || $result['destino_coincide'] === false) {
             $result['nivel_riesgo_coherencia'] = 'medium';
         }
 
@@ -272,6 +280,38 @@ class ServicioValidacionPagos
         $payment->save();
 
         return $path;
+    }
+
+    /**
+     * Compara el destino leído del comprobante con los datos de cobro de la tienda.
+     * null = no se puede decidir (lectura con forma inválida o tienda sin datos).
+     */
+    private function destinoEsDeLaTienda(string $metodo, string $destino): ?bool
+    {
+        $datos = \App\Models\Configuracion::datosPago();
+
+        if ($metodo === 'pagomovil') {
+            $leido = preg_replace('/\D/', '', $destino);
+            $tienda = $datos['pagomovil']['telefono'];
+            if (strlen($leido) === 12 && str_starts_with($leido, '58')) {
+                $leido = '0' . substr($leido, 2);
+            }
+            if (! preg_match('/^04\d{9}$/', $leido) || $tienda === '') {
+                return null;
+            }
+            return $leido === $tienda;
+        }
+
+        if ($metodo === 'transferencia') {
+            // Formato enmascarado del banco: primeros y últimos dígitos visibles
+            if (! preg_match('/^(\d{4})\*+(\d{4})$/', $destino, $m) || $datos['transferencia']['numero_cuenta'] === '') {
+                return null;
+            }
+            $cuenta = $datos['transferencia']['numero_cuenta'];
+            return str_starts_with($cuenta, $m[1]) && str_ends_with($cuenta, $m[2]);
+        }
+
+        return null;
     }
 
     /**

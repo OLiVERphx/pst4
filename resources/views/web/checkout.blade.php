@@ -31,9 +31,10 @@
               <div class="payment-method-icon">🏪</div>
               <div class="payment-method-name">Retiro en tienda</div>
             </div>
-            <div class="payment-method" :class="{ 'selected': tipoEntrega === 'delivery' }" @click.prevent="tipoEntrega = 'delivery'; if (metodo === 'fisico') metodo = 'transferencia'">
+            <div class="payment-method" :class="{ 'selected': tipoEntrega === 'delivery', 'disabled': !metodoOnline }" @click.prevent="if (metodoOnline) { tipoEntrega = 'delivery'; if (metodo === 'fisico') metodo = metodoOnline }">
               <div class="payment-method-icon">🚚</div>
               <div class="payment-method-name">Delivery</div>
+              <div class="payment-method-sub" x-show="!metodoOnline">Requiere pago en línea: no disponible por ahora</div>
             </div>
           </div>
           <input type="hidden" name="tipo_entrega" :value="tipoEntrega">
@@ -81,23 +82,29 @@
         <div class="checkout-section-title">💳 Método de pago</div>
 
         <div class="payment-methods" role="tablist">
+          @if($metodos['transferencia'])
           <div class="payment-method" :class="{ 'selected': metodo === 'transferencia' }" @click="metodo = 'transferencia'">
             <div class="payment-method-icon">🏦</div>
             <div class="payment-method-name">Transferencia bancaria</div>
             <div class="payment-method-sub">En bolívares a tasa BCV</div>
           </div>
+          @endif
 
+          @if($metodos['pagomovil'])
           <div class="payment-method" :class="{ 'selected': metodo === 'pagomovil' }" @click="metodo = 'pagomovil'">
             <div class="payment-method-icon">📱</div>
             <div class="payment-method-name">Pago móvil</div>
             <div class="payment-method-sub">En bolívares a tasa BCV</div>
           </div>
+          @endif
 
+          @if($metodos['binance'])
           <div class="payment-method" :class="{ 'selected': metodo === 'binance' }" @click="metodo = 'binance'">
             <div class="payment-method-icon">💱</div>
             <div class="payment-method-name">Binance</div>
-            <div class="payment-method-sub">ID y moneda</div>
+            <div class="payment-method-sub">USDT</div>
           </div>
+          @endif
 
           <div class="payment-method" :class="{ 'selected': metodo === 'fisico', 'disabled': tipoEntrega === 'delivery' }" @click.prevent="if (tipoEntrega !== 'delivery') metodo = 'fisico'">
             <div class="payment-method-icon">🏪</div>
@@ -108,26 +115,42 @@
 
         <input type="hidden" name="metodo_pago" :value="metodo">
 
+        @php
+          $tr = $datosPago['transferencia']; $pm = $datosPago['pagomovil']; $bn = $datosPago['binance'];
+          $bancos = config('pagos.bancos');
+          $nombreBanco = fn ($c) => $c ? $c . ' - ' . ($bancos[$c] ?? '') : '';
+          $cuenta = trim(chunk_split($tr['numero_cuenta'], 4, ' '));
+          $telefono = strlen($pm['telefono']) === 11 ? substr($pm['telefono'], 0, 4) . '-' . substr($pm['telefono'], 4) : $pm['telefono'];
+        @endphp
+        @if($metodos['transferencia'])
         <div class="payment-detail-box" :class="{ 'active': metodo === 'transferencia' }">
-          <div class="pay-data-row"><div class="pay-data-key">Banco</div><div class="pay-data-val">Banco Provincial / Banesco</div></div>
-          <div class="pay-data-row"><div class="pay-data-key">Tipo</div><div class="pay-data-val">Cuenta Corriente</div></div>
-          <div class="pay-data-row"><div class="pay-data-key">Titular</div><div class="pay-data-val">Smartphone World C.A.</div></div>
-          <div class="pay-data-row"><div class="pay-data-key">RIF</div><div class="pay-data-val">J-50123456-7</div></div>
+          <div class="pay-data-row"><div class="pay-data-key">Banco</div><div class="pay-data-val">{{ $nombreBanco($tr['banco']) }}</div></div>
+          <div class="pay-data-row"><div class="pay-data-key">Cuenta {{ $tr['tipo_cuenta'] === 'ahorro' ? 'de ahorro' : 'corriente' }}</div><div class="pay-data-val">{{ $cuenta }}</div></div>
+          <div class="pay-data-row"><div class="pay-data-key">Titular</div><div class="pay-data-val">{{ $tr['titular'] }}</div></div>
+          <div class="pay-data-row"><div class="pay-data-key">Cédula / RIF</div><div class="pay-data-val">{{ $tr['documento'] }}</div></div>
           <template x-if="tasa"><div class="pay-data-row"><div class="pay-data-key">Monto a transferir</div><div class="pay-data-val" style="font-weight:700" x-text="'Bs ' + bs(totalBs)"></div></div></template>
         </div>
+        @endif
 
+        @if($metodos['pagomovil'])
         <div class="payment-detail-box" :class="{ 'active': metodo === 'pagomovil' }">
-          <div class="pay-data-row"><div class="pay-data-key">Teléfono</div><div class="pay-data-val">0414-1234567</div></div>
-          <div class="pay-data-row"><div class="pay-data-key">Banco</div><div class="pay-data-val">Banesco / Provincial</div></div>
-          <div class="pay-data-row"><div class="pay-data-key">RIF</div><div class="pay-data-val">J-50123456-7</div></div>
+          <div class="pay-data-row"><div class="pay-data-key">Teléfono</div><div class="pay-data-val">{{ $telefono }}</div></div>
+          <div class="pay-data-row"><div class="pay-data-key">Banco</div><div class="pay-data-val">{{ $nombreBanco($pm['banco']) }}</div></div>
+          <div class="pay-data-row"><div class="pay-data-key">Cédula / RIF</div><div class="pay-data-val">{{ $pm['documento'] }}</div></div>
           <template x-if="tasa"><div class="pay-data-row"><div class="pay-data-key">Monto a pagar</div><div class="pay-data-val" style="font-weight:700" x-text="'Bs ' + bs(totalBs)"></div></div></template>
         </div>
+        @endif
 
+        @if($metodos['binance'])
         <div class="payment-detail-box" :class="{ 'active': metodo === 'binance' }">
-          <div class="pay-data-row"><div class="pay-data-key">Binance Pay ID</div><div class="pay-data-val">284910482</div></div>
+          <div class="pay-data-row"><div class="pay-data-key">Binance Pay ID</div><div class="pay-data-val">{{ $bn['pay_id'] }}</div></div>
+          @if($bn['correo'])
+          <div class="pay-data-row"><div class="pay-data-key">Correo</div><div class="pay-data-val">{{ $bn['correo'] }}</div></div>
+          @endif
           <div class="pay-data-row"><div class="pay-data-key">Moneda</div><div class="pay-data-val">USDT</div></div>
           <div class="pay-data-row"><div class="pay-data-key">Monto a pagar</div><div class="pay-data-val" style="font-weight:700" x-text="total.toFixed(2) + ' USDT'"></div></div>
         </div>
+        @endif
 
         <div class="payment-detail-box" :class="{ 'active': metodo === 'fisico' }">
           <div class="pay-data-row"><div class="pay-data-key">Nota</div><div class="pay-data-val">Paga en efectivo (USD o Bs) al retirar en tienda física</div></div>
@@ -241,7 +264,9 @@
 function checkoutApp() {
   return {
     carrito: JSON.parse(localStorage.getItem('sw_carrito') || '[]'),
-    metodo: 'transferencia',
+    // Primer método online configurado por la tienda (null si solo hay efectivo)
+    metodoOnline: @json(collect(['transferencia', 'pagomovil', 'binance'])->first(fn ($m) => $metodos[$m])),
+    metodo: @json(collect(['transferencia', 'pagomovil', 'binance'])->first(fn ($m) => $metodos[$m]) ?? 'fisico'),
     tasa: {{ $tasaBcv ? (float) $tasaBcv : 'null' }},
     tipoEntrega: 'retiro',
     fileName: '',

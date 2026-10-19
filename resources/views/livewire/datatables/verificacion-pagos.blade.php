@@ -21,6 +21,11 @@
                     : 'Monto pagado coincide con el total del pedido'],
                 ['ok' => $coh['fecha_valida'] ?? null, 'label' => 'Fecha de pago válida (no futura ni anterior al pedido)', 'requerido' => true],
                 ['ok' => $coh['referencia_unica'] ?? null, 'label' => 'Referencia no usada en otro pedido', 'requerido' => true],
+                ['ok' => $coh['destino_coincide'] ?? null, 'requerido' => false, 'label' => match ($coh['destino_coincide'] ?? null) {
+                    true => 'Pagado a la cuenta o teléfono de la tienda',
+                    false => 'El destino del comprobante NO es la cuenta o teléfono de la tienda (' . ($ocr['destino'] ?? '') . ')',
+                    default => 'Destino del pago: no se pudo leer, verificar a ojo',
+                }],
                 ['ok' => $ocr ? (($coh['ocr_coincide'] ?? null) !== false) : null, 'requerido' => false, 'label' => ! $ocr
                     ? 'Lectura automática no disponible: verificar a ojo' . (isset($meta['ocr']['motivo']) ? ' (' . $meta['ocr']['motivo'] . ')' : '')
                     : (($coh['ocr_coincide'] ?? null) === false

@@ -24,6 +24,7 @@ class VerificacionComprobanteTest extends TestCase
     private function checkoutConComprobante(array $extra = []): Payment
     {
         $this->seed();
+        $this->configurarDatosDePago();
         $cliente = User::where('email', '!=', 'admin@swworld.com')->firstOrFail();
         $producto = Product::where('activo', true)->where('stock', '>', 0)->firstOrFail();
 

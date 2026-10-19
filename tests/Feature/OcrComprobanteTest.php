@@ -165,6 +165,7 @@ class OcrComprobanteTest extends TestCase
         }
         config(['pagos.ocr.habilitado' => true]);
         $this->seed();
+        $this->configurarDatosDePago();
         ServicioPrecios::registrarTasaBcv(50.00, now());
 
         $cliente = User::where('email', '!=', 'admin@swworld.com')->firstOrFail();
@@ -210,5 +211,42 @@ class OcrComprobanteTest extends TestCase
         imagepng($big, $ruta);
 
         return new UploadedFile($ruta, 'comprobante.png', 'image/png', null, true);
+    }
+
+    #[Test]
+    public function detecta_si_el_pago_movil_no_fue_al_telefono_de_la_tienda()
+    {
+        ServicioPrecios::registrarTasaBcv(52.00, now());
+        $pago = $this->pagoBs(20.00, ['monto_bs' => 1040.00, 'fecha' => now()->toDateString(), 'destino' => '04140000000']);
+        $this->configurarDatosDePago(); // teléfono de la tienda: 0414-0000000
+
+        $this->assertTrue(app(ServicioValidacionPagos::class)->validarCoherencia($pago)['destino_coincide']);
+
+        // Mismo pago, pero hecho a otro teléfono: alerta (riesgo medio)
+        $pago->metadata_comprobante = ['ocr' => ['disponible' => true, 'monto_bs' => 1040.00, 'fecha' => now()->toDateString(), 'operacion' => null, 'destino' => '04241112233']];
+        $coh = app(ServicioValidacionPagos::class)->validarCoherencia($pago);
+        $this->assertFalse($coh['destino_coincide']);
+        $this->assertSame('medium', $coh['nivel_riesgo_coherencia']);
+    }
+
+    #[Test]
+    public function la_cuenta_enmascarada_de_una_transferencia_se_compara_por_sus_extremos()
+    {
+        ServicioPrecios::registrarTasaBcv(52.00, now());
+        $pago = $this->pagoBs(20.00, ['monto_bs' => 1040.00, 'destino' => '0102****0000'], ['metodo' => 'transferencia']);
+        $this->configurarDatosDePago(); // cuenta 0102 0000 00 0000000000
+
+        $this->assertTrue(app(ServicioValidacionPagos::class)->validarCoherencia($pago)['destino_coincide']);
+
+        // Una lectura OCR deformada no se usa para acusar: queda sin decidir
+        $pago->metadata_comprobante = ['ocr' => ['disponible' => true, 'monto_bs' => 1040.00, 'fecha' => null, 'operacion' => null, 'destino' => '010721485']];
+        $this->assertNull(app(ServicioValidacionPagos::class)->validarCoherencia($pago)['destino_coincide']);
+    }
+
+    #[Test]
+    public function el_ocr_extrae_el_destino_del_comprobante()
+    {
+        $this->assertSame('04140000000', ServicioOcrComprobantes::extraerCampos(self::TEXTO_PAGO_MOVIL)['destino']);
+        $this->assertSame('0102****2222', ServicioOcrComprobantes::extraerCampos(self::TEXTO_TRANSFERENCIA)['destino']);
     }
 }
