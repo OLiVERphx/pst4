@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    // Microservicio de predicciones (Python/FastAPI). Vacío = desactivado.
+    'ml' => [
+        'url' => env('ML_SERVICE_URL'),
+    ],
+
 ];

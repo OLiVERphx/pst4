@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use App\Models\Order;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
@@ -184,23 +185,10 @@ class ReportController extends Controller
 
         // Para evitar exponer información sensible sin permiso, la vista debe pedir 'pagos.ver' antes de mostrar detalles.
 
-        // Consumir microservicio ML externo si está disponible. Degradar con gracia si falla.
-        $mlReport = null;
-        try {
-            $mlBase = env('ML_SERVICE_URL', 'http://ml-service:8001');
-            $url = rtrim($mlBase, '/') . '/api/ml/reports';
-            // timeout corto para no bloquear el panel; puede ajustarse según SLA
-            $response = Http::timeout(5)->get($url);
-            if ($response->successful()) {
-                $mlReport = $response->json();
-            } else {
-                Log::warning('ML service returned non-200', ['status' => $response->status(), 'url' => $url]);
-            }
-        } catch (\Exception $e) {
-            // No interrumpir el dashboard por fallo del servicio ML; registrar para monitorización
-            Log::warning('ML service not available: ' . $e->getMessage());
-            $mlReport = null;
-        }
+        // Microservicio ML (Python/FastAPI) opcional: solo se consulta si ML_SERVICE_URL
+        // está configurado. Si no responde, se recuerda 5 minutos para no demorar cada
+        // carga del panel esperando a un servicio caído.
+        $mlReport = $this->consultarServicioMl();
 
         return view('admin.reports.index', compact(
             'topProducts', 'lowStock', 'ventasPorCategoria',
@@ -407,5 +395,28 @@ class ReportController extends Controller
             ->toArray();
 
         return $rows;
+    }
+
+    private function consultarServicioMl(): ?array
+    {
+        $base = config('services.ml.url');
+        if (! $base || Cache::get('ml_service_caido')) {
+            return null;
+        }
+
+        $url = rtrim($base, '/') . '/api/ml/reports';
+        try {
+            $response = Http::connectTimeout(1)->timeout(3)->get($url);
+            if ($response->successful()) {
+                return $response->json();
+            }
+            Log::warning('ML service returned non-200', ['status' => $response->status(), 'url' => $url]);
+        } catch (\Exception $e) {
+            Log::warning('ML service not available: ' . $e->getMessage());
+        }
+
+        Cache::put('ml_service_caido', true, now()->addMinutes(5));
+
+        return null;
     }
 }
