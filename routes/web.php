@@ -47,6 +47,18 @@ Route::middleware(['auth', 'active', 'admin'])
             ->name('clients.lista')
             ->middleware('can:clientes.ver');
 
+        // Cuenta propia: cualquier usuario del panel
+        Route::get('perfil', [\App\Http\Controllers\Admin\PerfilController::class, 'show'])->name('perfil');
+        Route::put('perfil/password', [\App\Http\Controllers\Admin\PerfilController::class, 'actualizarPassword'])
+            ->name('perfil.password')
+            ->middleware('throttle:6,1');
+        Route::put('perfil/notificaciones', [\App\Http\Controllers\Admin\PerfilController::class, 'actualizarNotificaciones'])
+            ->name('perfil.notificaciones');
+
+        Route::post('settings/limpiar-cache', [\App\Http\Controllers\Admin\SettingsController::class, 'limpiarCache'])
+            ->name('settings.limpiar_cache')
+            ->middleware(['can:configuracion.editar', 'throttle:3,1']);
+
         Route::get('settings', [\App\Http\Controllers\Admin\SettingsController::class, 'index'])
             ->name('settings.index')
             ->middleware('can:configuracion.editar');

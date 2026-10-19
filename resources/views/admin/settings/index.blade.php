@@ -133,41 +133,8 @@
     </form>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <!-- Mi perfil -->
-        <div class="bg-[#334155] border border-[#475569] rounded-xl p-5">
-            <h3 class="font-bold text-[#F1F5F9] mb-2">Mi perfil</h3>
-            <div class="space-y-3">
-                <div class="text-sm text-[#A0AEC0]">Nombre</div>
-                <div class="text-[#F1F5F9] font-semibold">{{ auth()->user()->name }}</div>
-                <div class="text-sm text-[#A0AEC0]">Email</div>
-                <div class="text-[#F1F5F9]">{{ auth()->user()->email }}</div>
-                <div class="text-sm text-[#A0AEC0]">Nueva contraseña</div>
-                <input type="password" class="w-full bg-[#475569] border border-[#475569] rounded-lg px-3 py-2 text-sm text-[#F1F5F9]" />
-            </div>
-        </div>
-
-        <!-- Notificaciones -->
-        <div class="bg-[#334155] border border-[#475569] rounded-xl p-5">
-            <h3 class="font-bold text-[#F1F5F9] mb-2">Notificaciones</h3>
-            <ul class="space-y-3 text-sm">
-                <li class="flex items-center justify-between">
-                    <div class="text-[#F1F5F9]">Alerta: stock bajo</div>
-                    <span class="ml-2 bg-[#059669]/10 text-[#34D399] text-[11px] font-bold rounded-full px-2 py-0.5">Activo</span>
-                </li>
-                <li class="flex items-center justify-between">
-                    <div class="text-[#F1F5F9]">Nuevo pedido</div>
-                    <span class="ml-2 bg-[#059669]/10 text-[#34D399] text-[11px] font-bold rounded-full px-2 py-0.5">Activo</span>
-                </li>
-                <li class="flex items-center justify-between">
-                    <div class="text-[#F1F5F9]">Pago recibido</div>
-                    <span class="ml-2 bg-[#059669]/10 text-[#34D399] text-[11px] font-bold rounded-full px-2 py-0.5">Activo</span>
-                </li>
-                <li class="flex items-center justify-between">
-                    <div class="text-[#F1F5F9]">Reporte semanal</div>
-                    <span class="ml-2 bg-[#059669]/10 text-[#34D399] text-[11px] font-bold rounded-full px-2 py-0.5">Activo</span>
-                </li>
-            </ul>
-        </div>
+        @include('admin.perfil._password')
+        @include('admin.perfil._notificaciones')
 
         <!-- Sistema -->
         <div class="bg-[#334155] border border-[#475569] rounded-xl p-5">
@@ -175,15 +142,19 @@
             <div class="text-sm space-y-2 text-[#F1F5F9]">
                 <div>Versión: 1.0.0</div>
                 <div>Laravel: {{ app()->version() }}</div>
-                <div>BD: MySQL 8.0</div>
+                <div>PHP: {{ PHP_VERSION }}</div>
+                <div>Base de datos: {{ $baseDeDatos ?? '—' }}</div>
                 <div>Total productos: {{ $productCount ?? 0 }}</div>
                 <div>Total pedidos: {{ $orderCount ?? 0 }}</div>
                 <div>Total clientes: {{ $totalClients ?? 0 }}</div>
             </div>
 
-            <div class="mt-4 text-right">
-                <button class="px-4 py-2 rounded-lg bg-[#475569] border border-[#475569] text-[#A0AEC0]">Limpiar caché</button>
-            </div>
+            <form method="POST" action="{{ route('admin.settings.limpiar_cache') }}" class="mt-4 flex items-center justify-between gap-3"
+                  onsubmit="return confirm('¿Limpiar la caché? Las tasas, reportes y el índice de búsqueda se volverán a calcular.')">
+                @csrf
+                <p class="text-xs text-[#A0AEC0]">Úsalo si un cambio no se refleja (por ejemplo, productos que no aparecen en la búsqueda).</p>
+                <button type="submit" class="shrink-0 px-4 py-2 rounded-lg bg-[#475569] border border-[#475569] text-sm text-[#F1F5F9] hover:bg-[#3B4A61]">Limpiar caché</button>
+            </form>
         </div>
     </div>
 

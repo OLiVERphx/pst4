@@ -51,6 +51,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'ultimo_acceso' => 'datetime',
         'activo' => 'boolean',
+        'preferencias_notificacion' => 'array',
         // 'bloqueado' indica que el cliente puede ver catálogo pero no completar checkout
         'bloqueado' => 'boolean',
         'password' => 'hashed',
@@ -116,5 +117,28 @@ class User extends Authenticatable
         return $query->whereHas('role', function ($q) {
             $q->where('nombre', 'cliente');
         });
+    }
+
+    /**
+     * Avisos del panel: tipo => [etiqueta, permiso necesario, descripción].
+     * Cada usuario elige cuáles recibir en Configuración o en Mi cuenta.
+     */
+    public const NOTIFICACIONES = [
+        'pedido_nuevo' => ['Nuevo pedido', 'pedidos.ver', 'Pedidos pendientes de atender, en la campana.'],
+        'pago_recibido' => ['Pago recibido', 'pagos.ver', 'Comprobantes de pago por verificar, en la campana.'],
+        'stock_bajo' => ['Stock bajo', 'inventario.ver', 'Productos en o por debajo de su stock mínimo, en la campana.'],
+        'reporte_semanal' => ['Reporte semanal', 'reportes.ver', 'Resumen de ventas por correo cada lunes a las 7:45 a. m.'],
+    ];
+
+    /** Tipos de aviso que el usuario puede recibir según sus permisos. */
+    public function notificacionesDisponibles(): array
+    {
+        return array_filter(self::NOTIFICACIONES, fn ($n) => $this->can($n[1]));
+    }
+
+    public function quiereNotificacion(string $tipo): bool
+    {
+        return isset($this->notificacionesDisponibles()[$tipo])
+            && ($this->preferencias_notificacion[$tipo] ?? true);
     }
 }

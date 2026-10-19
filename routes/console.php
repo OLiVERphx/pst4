@@ -39,3 +39,9 @@ Schedule::command('tasa:actualizar')
     ->between('7:00', '20:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+// Reporte semanal por correo (aviso "Reporte semanal" en Mi cuenta / Configuración).
+Schedule::command('reportes:semanal')
+    ->weeklyOn(1, '7:45')
+    ->withoutOverlapping()
+    ->onOneServer();

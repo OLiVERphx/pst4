@@ -170,13 +170,13 @@ function adminApp() {
         </nav>
 
         <div class="flex-shrink-0 p-4 border-t border-[#475569]">
-            <div class="flex items-center gap-3">
+            <a href="{{ route('admin.perfil') }}" title="Mi cuenta" class="flex items-center gap-3 rounded-lg -m-1 p-1 hover:bg-[#475569]/50">
                 <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7C3AED] to-[#1D4ED8] flex items-center justify-center text-sm text-white font-bold">{{ strtoupper(substr(auth()->user()?->name ?? 'A',0,1)) }}</div>
                 <div>
                     <div class="text-sm font-semibold text-[#F1F5F9]">{{ auth()->user()?->name ?? 'Admin' }}</div>
                     <div class="text-xs text-[#A0AEC0]">{{ auth()->user()?->role?->nombre ?? 'Admin' }}</div>
                 </div>
-            </div>
+            </a>
         </div>
     </aside>
 
@@ -194,10 +194,28 @@ function adminApp() {
             </div>
 
             <div class="ml-auto flex items-center gap-3">
-                <button class="relative w-8 h-8 bg-[#475569] border border-[#475569] rounded-lg hover:bg-[#334155] flex items-center justify-center">
-                    🔔
-                    <span class="absolute -top-1 -right-1 bg-[#EA580C] text-white text-[10px] font-bold rounded-full px-1">{{ ($sidebarStats['pedidos_pendientes'] ?? 0) + ($sidebarStats['pagos_por_verificar'] ?? 0) + ($sidebarStats['alertas_stock'] ?? 0) }}</span>
-                </button>
+                @php $totalAlertas = array_sum(array_column($alertasCampana ?? [], 'cantidad')); @endphp
+                <div class="relative" x-data="{ abierto: false }" @keydown.escape.window="abierto = false" @click.outside="abierto = false">
+                    <button type="button" @click="abierto = !abierto" :aria-expanded="abierto" title="Notificaciones"
+                            class="relative w-8 h-8 bg-[#475569] border border-[#475569] rounded-lg hover:bg-[#334155] flex items-center justify-center">
+                        🔔
+                        @if ($totalAlertas > 0)
+                            <span class="absolute -top-1 -right-1 bg-[#EA580C] text-white text-[10px] font-bold rounded-full px-1">{{ $totalAlertas }}</span>
+                        @endif
+                    </button>
+                    <div x-show="abierto" x-cloak x-transition
+                         class="absolute right-0 mt-2 w-72 rounded-xl border border-[#475569] bg-[#1E293B] p-2 shadow-xl">
+                        @forelse ($alertasCampana ?? [] as $alerta)
+                            <a href="{{ $alerta['url'] }}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[#F1F5F9] hover:bg-[#334155]">
+                                <span>{{ $alerta['icono'] }}</span>
+                                <span>{{ $alerta['texto'] }}</span>
+                            </a>
+                        @empty
+                            <p class="px-3 py-2 text-sm text-[#A0AEC0]">No hay avisos pendientes.</p>
+                        @endforelse
+                        <a href="{{ route('admin.perfil') }}" class="mt-1 block border-t border-[#475569] px-3 pt-2 text-xs text-[#60A5FA] hover:underline">Elegir qué avisos recibir</a>
+                    </div>
+                </div>
                 <form method="POST" action="{{ route('admin.logout') }}">
                     @csrf
                     <button type="submit" title="Cerrar sesión" class="w-8 h-8 bg-[#475569] border border-[#475569] rounded-lg hover:bg-[#334155] flex items-center justify-center text-[#EA580C]">⏻</button>
