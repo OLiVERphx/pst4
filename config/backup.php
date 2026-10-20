@@ -88,9 +88,9 @@ return [
         'notifiable' => Notifiable::class,
 
         'mail' => [
-            'to' => env('BACKUP_NOTIFY_MAIL', env('MAIL_FROM_ADDRESS', 'backup@localhost')),
+            'to' => env('BACKUP_NOTIFY_MAIL', env('MAIL_FROM_ADDRESS', 'backup@example.com')),
             'from' => [
-                'address' => env('MAIL_FROM_ADDRESS', 'backup@localhost'),
+                'address' => env('MAIL_FROM_ADDRESS', 'backup@example.com'),
                 'name' => env('MAIL_FROM_NAME', 'Smartphone World'),
             ],
         ],

@@ -69,6 +69,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Primer superadministrador (php artisan produccion:inicializar)
+    |--------------------------------------------------------------------------
+    |
+    | Solo se usan al instalar en un servidor nuevo. No hay contraseña por defecto:
+    | si no se definen, el comando se niega a crear el usuario.
+    |
+    */
+
+    'admin_email' => env('ADMIN_EMAIL'),
+    'admin_password' => env('ADMIN_PASSWORD'),
+    'admin_nombre' => env('ADMIN_NOMBRE', 'Administrador'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

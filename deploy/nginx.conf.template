@@ -1,0 +1,42 @@
+# ${PORT} y ${LISTEN_IPV6} los pone entrypoint.sh (Railway asigna el puerto; IPv6 solo si el contenedor lo tiene)
+worker_processes 1;
+pid /tmp/nginx.pid;
+error_log /dev/stderr warn;
+
+events { worker_connections 512; }
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    access_log off;
+    server_tokens off;
+    sendfile on;
+    # Comprobantes de pago: hasta 5 MB (el formulario lo valida); margen para el resto del formulario
+    client_max_body_size 8m;
+
+    server {
+        listen ${PORT} default_server;
+        ${LISTEN_IPV6}
+        root /app/public;
+        index index.php;
+
+        add_header X-Content-Type-Options nosniff always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        # Archivos ocultos y de código nunca se sirven
+        location ~ /\.(?!well-known) { deny all; }
+
+        location ~ \.php$ {
+            try_files $uri =404;
+            include /etc/nginx/fastcgi_params;
+            fastcgi_pass 127.0.0.1:9000;
+            fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+            fastcgi_param DOCUMENT_ROOT $realpath_root;
+            fastcgi_read_timeout 60s;
+        }
+    }
+}
