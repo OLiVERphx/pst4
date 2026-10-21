@@ -123,8 +123,18 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm text-[#A0AEC0]">Stock</label>
-                        <input wire:model="form.stock" type="number" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]" />
+                        @if($editingProduct)
+                            {{-- El stock de un producto existente solo cambia con movimientos de inventario --}}
+                            <label class="block text-sm text-[#A0AEC0]">Stock actual</label>
+                            <div class="px-2 py-1 text-[#F1F5F9]">{{ $form['stock'] ?? 0 }}</div>
+                            @can('inventario.ajustar')
+                                <a href="{{ route('admin.inventario.lista') }}" class="text-xs text-[#60A5FA] hover:underline">Ajustar con un movimiento de inventario</a>
+                            @endcan
+                        @else
+                            <label class="block text-sm text-[#A0AEC0]">Stock inicial</label>
+                            <input wire:model="form.stock" type="number" min="0" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]" @cannot('inventario.ajustar') disabled @endcannot />
+                            <span class="block text-[11px] text-[#A0AEC0]">Se registra como entrada de inventario.</span>
+                        @endif
                     </div>
                     <div>
                         <label class="block text-sm text-[#A0AEC0]">Stock mínimo</label>

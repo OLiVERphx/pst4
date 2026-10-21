@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use App\Services\ServicioAuditoria;
+use App\Services\ServicioInventario;
 
 /**
  * Livewire component for products datatable.
@@ -145,7 +146,15 @@ class ProductsTable extends Component
         $data['activo'] = (bool) ($data['activo'] ?? true);
         $data['destacado'] = (bool) ($data['destacado'] ?? false);
 
-        DB::transaction(function () use ($data) {
+        // El stock no se escribe desde este formulario: al crear, el inicial entra como movimiento
+        // de inventario; al editar, se ajusta desde Inventario. Así el historial siempre cuadra.
+        $stockInicial = $this->editingProduct ? 0 : (int) ($data['stock'] ?? 0);
+        unset($data['stock']);
+        if ($stockInicial > 0) {
+            Gate::authorize('inventario.ajustar');
+        }
+
+        DB::transaction(function () use ($data, $stockInicial) {
             $actorId = Auth::id();
             if ($this->editingProduct) {
                 $product = Product::where('id', $this->editingProduct)->lockForUpdate()->first();
@@ -156,9 +165,12 @@ class ProductsTable extends Component
                     ServicioAuditoria::registrar('producto.modificado', $product, $antes, $despues, $actorId);
                 }
             } else {
-                $product = Product::create($data);
-                $despues = $product->only(['codigo', 'nombre', 'precio_detal', 'precio_mayor', 'stock', 'activo']);
+                $product = Product::create($data + ['stock' => 0]);
+                $despues = $product->only(['codigo', 'nombre', 'precio_detal', 'precio_mayor', 'activo']);
                 ServicioAuditoria::registrar('producto.creado', $product, null, $despues, $actorId);
+                if ($stockInicial > 0) {
+                    app(ServicioInventario::class)->registrarMovimiento($product, 'entrada', $stockInicial, null, 'Stock inicial al crear el producto', Auth::user());
+                }
             }
         });
 
