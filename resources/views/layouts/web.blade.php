@@ -621,6 +621,20 @@ input, select, textarea { font-family: inherit; }
   padding: 1rem 1.5rem; border-top: 1px solid var(--c-border);
 }
 
+/* CELULAR: la barra superior pasa a dos filas (marca y acciones; buscador debajo)
+   para que ningún botón quede fuera de la pantalla. */
+@media (max-width: 768px) {
+  .navbar { flex-wrap: wrap; height: auto; padding: .5rem .75rem; gap: .5rem; }
+  .navbar-brand span, .nav-texto, .nav-ocultar-movil { display: none; }
+  .navbar-search { order: 3; flex-basis: 100%; max-width: none; }
+  .navbar-actions { margin-left: auto; gap: .25rem; }
+  .nav-btn { padding: .4rem .55rem; font-size: .8rem; }
+  .page { padding-top: 112px; }
+  .section { padding: 1.25rem 1rem; }
+  .checkout-grid { grid-template-columns: 1fr; gap: 1.25rem; }
+  .form-row { grid-template-columns: 1fr; }
+}
+
 /* FOOTER */
 .footer {
   margin-top: 3rem; padding: 2rem 1.5rem;
@@ -691,7 +705,7 @@ input, select, textarea { font-family: inherit; }
     @endguest
 
     @auth
-      <a href="{{ route('web.account') }}" class="nav-btn nav-btn-ghost">👤 {{ auth()->user()->name }}</a>
+      <a href="{{ route('web.account') }}" class="nav-btn nav-btn-ghost" title="Mi cuenta">👤 <span class="nav-texto">{{ auth()->user()->name }}</span></a>
       <form method="POST" action="{{ route('web.logout') }}" style="display:inline">
         @csrf
         <button type="submit" class="nav-btn nav-btn-ghost">Salir</button>
@@ -699,11 +713,11 @@ input, select, textarea { font-family: inherit; }
     @endauth
 
     <!-- Carrito -->
-    <button class="nav-btn nav-btn-cart" @click="abrirCarrito()" x-show="conteoCarrito > 0" x-cloak>
-      🛒 Carrito
+    <button class="nav-btn nav-btn-cart" @click="abrirCarrito()" x-show="conteoCarrito > 0" x-cloak title="Carrito">
+      🛒 <span class="nav-texto">Carrito</span>
       <span class="cart-badge has-items" x-text="conteoCarrito"></span>
     </button>
-    <a href="{{ route('web.checkout') }}" class="nav-btn nav-btn-ghost" x-show="conteoCarrito > 0" x-cloak>Finalizar</a>
+    <a href="{{ route('web.checkout') }}" class="nav-btn nav-btn-ghost nav-ocultar-movil" x-show="conteoCarrito > 0" x-cloak>Finalizar</a>
 
     <button class="theme-btn" @click="toggleTema()" x-text="theme === 'dark' ? '🌙' : '☀️'"></button>
   </div>
