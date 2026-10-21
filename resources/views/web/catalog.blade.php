@@ -92,7 +92,7 @@
         <div class="modal-cat" x-text="(productoModal?.categoria ?? '') + ' · Código: ' + (productoModal?.codigo ?? '')"></div>
         <div class="modal-price-row">
           <div class="modal-price" x-text="'$' + productoModal?.precio_detal.toFixed(2)"></div>
-          <div class="modal-price-mayor" x-text="'Mayor: $' + productoModal?.precio_mayor.toFixed(2)"></div>
+          <div class="modal-price-mayor" x-text="'Mayor: $' + productoModal?.precio_mayor.toFixed(2) + ' desde ' + productoModal?.min_mayor + ' uds.'"></div>
         </div>
         <div class="modal-stock">
           <div class="stock-dot"
@@ -109,7 +109,7 @@
         <div class="modal-qty-row">
           <span class="qty-label">Cantidad:</span>
           <div class="qty-ctrl">
-            <button class="qty-btn" @click="modalCantidad = Math.max(1, modalCantidad-1)">−</button>
+            <button class="qty-btn" @click="modalCantidad = Math.max(modalTipo === 'mayor' ? (productoModal?.min_mayor || 1) : 1, modalCantidad-1)">−</button>
             <span class="qty-val" x-text="modalCantidad"></span>
             <button class="qty-btn" @click="modalCantidad++">+</button>
           </div>
@@ -118,7 +118,7 @@
           <button class="type-btn" :class="{ active: modalTipo==='detal' }"
             @click="modalTipo='detal'">🛍️ Al detal</button>
           <button class="type-btn" :class="{ active: modalTipo==='mayor' }"
-            @click="modalTipo='mayor'">📦 Al mayor</button>
+            @click="modalTipo='mayor'; modalCantidad = Math.max(modalCantidad, productoModal?.min_mayor || 1)">📦 Al mayor</button>
         </div>
         <button class="modal-add-btn" @click="agregarDesdeModal()">
           Agregar al carrito

@@ -80,12 +80,16 @@ class InventoryMovementsTable extends Component
     {
         Gate::authorize('inventario.ajustar');
 
+        // Reserva y liberación los genera el sistema (checkout y cancelaciones), no se cargan a mano
+        $ajuste = ($this->form['tipo'] ?? null) === 'ajuste';
         $this->validate([
             'form.producto_id' => 'required|exists:products,id',
-            'form.tipo' => 'required|in:entrada,salida,ajuste,reserva,liberacion',
-            'form.cantidad' => 'required|integer|min:1',
+            'form.tipo' => 'required|in:entrada,salida,ajuste',
+            'form.cantidad' => ['required', 'integer', $ajuste ? 'min:0' : 'min:1'],
             'form.referencia' => 'nullable|string|max:100',
-            'form.notas' => 'nullable|string',
+            'form.notas' => $ajuste ? 'required|string|max:500' : 'nullable|string|max:500',
+        ], [
+            'form.notas.required' => 'Indica el motivo del ajuste (por ejemplo, conteo físico del día).',
         ]);
 
         $product = Product::find($this->form['producto_id']);
@@ -94,7 +98,22 @@ class InventoryMovementsTable extends Component
             return;
         }
 
-        $service->registrarMovimiento($product, $this->form['tipo'], (int)$this->form['cantidad'], $this->form['referencia'] ?? null, $this->form['notas'] ?? null, Auth::user());
+        $cantidad = (int) $this->form['cantidad'];
+        if ($this->form['tipo'] === 'salida' && $cantidad > $product->stock) {
+            $this->addError('form.cantidad', "Solo hay {$product->stock} unidades en stock.");
+            return;
+        }
+
+        if ($ajuste) {
+            // Ajuste = conteo físico: se escribe el stock contado y se registra la diferencia (positiva o negativa)
+            if ($cantidad === (int) $product->stock) {
+                $this->addError('form.cantidad', 'El stock contado es igual al registrado: no hay nada que ajustar.');
+                return;
+            }
+            $service->ajustarStock($product, $cantidad, $this->form['notas'], Auth::user());
+        } else {
+            $service->registrarMovimiento($product, $this->form['tipo'], $cantidad, $this->form['referencia'] ?? null, $this->form['notas'] ?? null, Auth::user());
+        }
 
         $this->showModal = false;
         $this->resetPage();

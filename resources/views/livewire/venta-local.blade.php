@@ -42,7 +42,8 @@
             <tbody class="divide-y divide-[#475569]">
                 @forelse($items as $i => $it)
                     <tr class="hover:bg-[#475569]/30">
-                        <td class="px-4 py-2 text-sm text-[#F1F5F9]">{{ $it['nombre'] }} <span class="text-[#A0AEC0]">({{ $it['codigo'] }})</span></td>
+                        <td class="px-4 py-2 text-sm text-[#F1F5F9]">{{ $it['nombre'] }} <span class="text-[#A0AEC0]">({{ $it['codigo'] }})</span>
+                            <span class="ml-1 text-[11px] px-1.5 py-0.5 rounded {{ $it['tipo'] === 'mayor' ? 'bg-[#7C3AED]/20 text-[#C4B5FD]' : 'bg-[#475569] text-[#CBD5E1]' }}">{{ $it['tipo'] === 'mayor' ? 'Mayor' : 'Detal' }}</span></td>
                         <td class="px-4 py-2">
                             <input type="number" value="{{ $it['cantidad'] }}" wire:change="updateQuantity({{ $i }}, $event.target.value)"
                                 class="w-16 bg-[#475569] border border-[#475569] rounded px-2 py-1 text-sm text-[#F1F5F9]" />
@@ -57,6 +58,15 @@
                     <tr><td colspan="5" class="px-4 py-6 text-center text-sm text-[#A0AEC0]">Agrega productos con el buscador de arriba.</td></tr>
                 @endforelse
             </tbody>
+            @if(count($items))
+                <tfoot class="border-t border-[#475569]">
+                    <tr>
+                        <td colspan="3" class="px-4 py-3 text-right text-sm font-semibold text-[#A0AEC0]">Total</td>
+                        <td class="px-4 py-3 text-base font-bold text-[#F1F5F9]">${{ number_format(collect($items)->sum(fn ($it) => $it['precio'] * $it['cantidad']), 2) }}</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            @endif
         </table>
     </div>
 

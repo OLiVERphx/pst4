@@ -36,6 +36,10 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials, $request->boolean('recuerdar')) ) {
+            if (!Auth::user()->activo) {
+                Auth::logout();
+                return back()->withErrors(['email' => 'Tu cuenta está desactivada. Comunícate con Smartphone World.'])->withInput();
+            }
             $request->session()->regenerate();
             return redirect()->intended(route('web.home'));
         }

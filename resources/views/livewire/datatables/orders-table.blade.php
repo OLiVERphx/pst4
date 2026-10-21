@@ -103,6 +103,24 @@
                     </div>
                 </div>
 
+                <!-- Entrega -->
+                <div class="p-5 border-b border-[#475569] space-y-1 text-sm">
+                    <div class="text-xs text-[#A0AEC0] font-semibold uppercase tracking-wide mb-2">Datos de entrega</div>
+                    <div class="text-[#F1F5F9]">{{ $selectedOrder->entrega_nombre ?: ($selectedOrder->user?->name ?? ($selectedOrder->canal === 'local' ? 'Venta en el local' : '—')) }}</div>
+                    @if($selectedOrder->entrega_telefono)
+                        <div class="text-[#CBD5E1]">📞 {{ $selectedOrder->entrega_telefono }}</div>
+                    @endif
+                    @if($selectedOrder->tipo_entrega === 'delivery')
+                        <div class="text-[#CBD5E1]">📍 {{ $selectedOrder->entrega_direccion ?: 'Sin dirección' }}{{ $selectedOrder->entrega_ciudad ? ', ' . $selectedOrder->entrega_ciudad : '' }}</div>
+                    @endif
+                    @if($selectedOrder->entrega_notas)
+                        <div class="text-[#A0AEC0]">📝 {{ $selectedOrder->entrega_notas }}</div>
+                    @endif
+                    @if($selectedOrder->estado === 'cancelado' && $selectedOrder->motivo_cancelacion)
+                        <div class="text-red-400">Motivo de cancelación: {{ $selectedOrder->motivo_cancelacion }}</div>
+                    @endif
+                </div>
+
                 <!-- Items -->
                 <div class="p-5 flex-1">
                     <div class="text-xs text-[#A0AEC0] font-semibold uppercase tracking-wide mb-3">Items</div>
@@ -131,7 +149,22 @@
                             Avanzar a: {{ $siguienteLabel }}
                         </button>
                     @endif
-                    <button wire:click.prevent="cancel({{ $selectedOrder->id }}, 'Cancelado desde admin')" class="w-full bg-red-600/90 text-white px-3 py-2.5 rounded-lg text-sm hover:bg-red-600 transition font-medium">Cancelar pedido</button>
+                    @can('pedidos.anular')
+                        @unless(in_array($selectedOrder->estado, \App\Services\ServicioPedidos::ESTADOS_NO_CANCELABLES, true))
+                            <div x-data="{ abierto: false }">
+                                <button x-show="!abierto" @click.prevent="abierto = true" class="w-full bg-red-600/90 text-white px-3 py-2.5 rounded-lg text-sm hover:bg-red-600 transition font-medium">Cancelar pedido</button>
+                                <div x-show="abierto" x-cloak class="space-y-2">
+                                    <label class="block text-xs text-[#A0AEC0]">Motivo de la cancelación (las unidades vuelven al inventario)</label>
+                                    <textarea wire:model="motivoCancelacion" rows="2" maxlength="255" class="w-full bg-[#475569] border border-[#475569] rounded-lg px-3 py-2 text-sm text-[#F1F5F9]"></textarea>
+                                    @error('motivoCancelacion')<div class="text-xs text-red-400">{{ $message }}</div>@enderror
+                                    <div class="flex gap-2">
+                                        <button @click.prevent="abierto = false" class="flex-1 border border-[#475569] text-[#F1F5F9] px-3 py-2 rounded-lg text-sm">Volver</button>
+                                        <button wire:click.prevent="cancel({{ $selectedOrder->id }})" class="flex-1 bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-medium">Confirmar cancelación</button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endunless
+                    @endcan
                 </div>
             @endif
         </div>

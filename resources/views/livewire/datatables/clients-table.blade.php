@@ -48,7 +48,9 @@
                         </td>
                         <td class="px-4 py-2">
                             <button wire:click="openDetail({{ $client->id }})" class="text-[#1D4ED8] mr-2">Ver</button>
-                            <button wire:click="toggleActivo({{ $client->id }})" class="text-[#EA580C]">Toggle</button>
+                            @canany(['clientes.bloquear', 'clientes.editar'])
+                                <button wire:click="toggleActivo({{ $client->id }})" wire:confirm="{{ $client->activo ? '¿Desactivar la cuenta? El cliente no podrá iniciar sesión ni comprar.' : '¿Reactivar la cuenta del cliente?' }}" class="text-[#EA580C]">{{ $client->activo ? 'Desactivar' : 'Activar' }}</button>
+                            @endcanany
                         </td>
                     </tr>
                 @endforeach
@@ -78,10 +80,6 @@
                             @can('clientes.editar')
                                 <button wire:click.prevent="startEdit({{ $selectedClient->id }})" class="px-3 py-1 bg-blue-600 text-white rounded-md mr-2">Editar</button>
                             @endcan
-
-                            @php // Asegurar que el permiso exista para la comprobación visual
-                                \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'clientes.bloquear']);
-                            @endphp
 
                             @can('clientes.bloquear')
                                 <button wire:click.prevent="toggleBlock({{ $selectedClient->id }})" class="px-3 py-1 rounded-md {{ $selectedClient->bloqueado ? 'bg-red-600 text-white' : 'bg-gray-700 text-white' }}">

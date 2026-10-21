@@ -131,7 +131,7 @@ class ClientsTable extends Component
         // Pagos rechazados asociados a los pedidos de este cliente
         $this->detailRejectedPayments = Payment::whereHas('order', function ($q) use ($client) {
             $q->where('usuario_id', $client->id);
-        })->where('estado', 'rechazado')->orderByDesc('created_at')->get();
+        })->where('estado', 'invalido')->orderByDesc('created_at')->get();
     }
 
     public function closeDetail()

@@ -94,7 +94,7 @@ class ServicioPrecios
         $message .= "Faltan ";
         if ($faltanteUnidades > 0) {
             $message .= "{$faltanteUnidades} unidad(es) ";
-            if ($faltanteUsd > 0) $message .= "y ";
+            if ($faltanteUsd > 0) $message .= "o ";
         }
         if ($faltanteUsd > 0) {
             $message .= "US$ {$faltanteUsd} ";

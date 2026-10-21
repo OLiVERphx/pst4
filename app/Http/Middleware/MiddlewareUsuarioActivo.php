@@ -20,7 +20,10 @@ class MiddlewareUsuarioActivo
                 $user->tokens()->delete();
             }
             Auth::logout();
-            return redirect('/')->with('error', 'Cuenta inactiva.');
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            $login = $request->is(config('app.admin_path') . '*') ? 'admin.login' : 'web.login';
+            return redirect()->route($login)->withErrors(['email' => 'Tu cuenta está desactivada. Comunícate con Smartphone World.']);
         }
 
         return $next($request);

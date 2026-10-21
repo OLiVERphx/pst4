@@ -2,19 +2,36 @@
     <h3 class="font-semibold mb-2 text-[#F1F5F9]">Alertas de stock</h3>
 
     <div class="space-y-3">
-        @foreach($alerts as $alert)
-            @php $tipoBadge = $alert->tipo === 'bajo' ? 'bg-[#EA580C]/10 text-[#EA580C]' : 'bg-[#059669]/10 text-[#059669]'; @endphp
-            <div class="bg-[#334155] p-3 rounded flex items-center justify-between border border-[#475569] hover:bg-[#475569]">
+        @forelse($alerts as $alert)
+            @php
+                $sinStock = $alert->tipo === 'sin_stock';
+                $tipoBadge = $sinStock ? 'bg-red-500/10 text-red-400' : 'bg-[#EA580C]/10 text-[#EA580C]';
+            @endphp
+            <div class="bg-[#334155] p-3 rounded flex flex-wrap items-center justify-between gap-2 border border-[#475569] {{ $alert->leido ? 'opacity-60' : '' }}">
                 <div>
-                    <div class="text-sm font-medium text-[#F1F5F9]">{{ $alert->product?->nombre ?? 'Producto eliminado' }}</div>
-                    <div class="text-xs text-[#A0AEC0]">Tipo: {{ $alert->tipo }} - {{ $alert->created_at->diffForHumans() }}</div>
+                    <div class="text-sm font-medium text-[#F1F5F9]">{{ $alert->product?->nombre ?? 'Producto eliminado' }}
+                        <span class="ml-1 text-[11px] px-2 py-0.5 rounded-full {{ $tipoBadge }}">{{ $sinStock ? 'Sin stock' : 'Stock bajo' }}</span>
+                        @if($alert->leido)<span class="ml-1 text-[11px] text-[#A0AEC0]">Leída</span>@endif
+                    </div>
+                    <div class="text-xs text-[#A0AEC0]">
+                        @if($alert->product)Stock actual: {{ $alert->product->stock }} (mínimo {{ $alert->product->stock_minimo }}) · @endif
+                        {{ $alert->created_at->diffForHumans() }}
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
+                @can('inventario.ajustar')
+                    <div class="flex items-center gap-2">
+                        @if($alert->product)
                             <button wire:click="openReplenish({{ $alert->id }})" class="bg-gradient-to-r from-[#1D4ED8] to-[#0D9488] text-white px-3 py-1 rounded-lg">Reponer</button>
-                            <button wire:click="markAsRead(App\\Models\\StockAlert::find({{ $alert->id }}))" class="bg-[#475569] text-white px-3 py-1 rounded-lg">Marcar como leída</button>
-                </div>
+                        @endif
+                        @unless($alert->leido)
+                            <button wire:click="markAsRead({{ $alert->id }})" class="bg-[#475569] text-white px-3 py-1 rounded-lg">Marcar como leída</button>
+                        @endunless
+                    </div>
+                @endcan
             </div>
-        @endforeach
+        @empty
+            <div class="text-sm text-[#A0AEC0]">No hay alertas de stock.</div>
+        @endforelse
     </div>
 
     <!-- Modal reponer -->

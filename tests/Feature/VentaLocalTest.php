@@ -114,7 +114,7 @@ class VentaLocalTest extends TestCase
         $response->assertStatus(403);
     }
 
-    public function test_confirmSale_wholesale_minimum_error()
+    public function test_venta_al_mayor_usa_la_cantidad_minima_del_producto()
     {
         // Preparar rol y usuario con permiso
         DB::table('roles')->insert(['id' => 4, 'nombre' => 'vendedor2']);
@@ -148,10 +148,15 @@ class VentaLocalTest extends TestCase
 
         $this->actingAs($vendedor);
 
-        // Usar Livewire para agregar item tipo 'mayor' cantidad 2 y confirmar
+        // Al mayor se agrega con la cantidad mínima del producto y no se puede bajar de ella
         Livewire::test(\App\Http\Livewire\VentaLocal::class)
             ->call('addItem', $product->id, 'mayor', 2)
+            ->assertSet('items.0.cantidad', 10)
+            ->call('updateQuantity', 0, 3)
+            ->assertSee('se vende desde 10 unidades')
+            ->assertSet('items.0.cantidad', 10)
+            ->assertSee('$500.00')
             ->call('confirmSale')
-            ->assertSee('se requieren al menos');
+            ->assertSee('Venta registrada con número');
     }
 }

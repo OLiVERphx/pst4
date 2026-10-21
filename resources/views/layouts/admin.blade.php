@@ -68,16 +68,19 @@ function adminApp() {
         <nav class="flex-1 overflow-y-auto py-2" @click="if ($event.target.closest('a')) sidebarOpen = false">
             <div class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-2">PRINCIPAL</div>
             <ul class="mb-2">
+                @can('pedidos.ver')
                 <li>
                     <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">📊</span>
                         <span class="font-medium">Dashboard</span>
                     </a>
                 </li>
+                @endcan
             </ul>
 
             <div class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-2">TIENDA WEB</div>
             <ul class="mb-2">
+                @can('pedidos.ver')
                 <li>
                     <a href="{{ route('admin.pedidos.lista') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">📦</span>
@@ -85,6 +88,8 @@ function adminApp() {
                         <span class="ml-auto bg-[#EA580C] text-white text-[11px] font-bold rounded-full px-2 py-0.5">{{ $sidebarStats['pedidos_pendientes'] ?? 0 }}</span>
                     </a>
                 </li>
+                @endcan
+                @can('pagos.ver')
                 <li>
                     <a href="{{ route('admin.payments.lista') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">💳</span>
@@ -92,34 +97,44 @@ function adminApp() {
                         <span class="ml-auto bg-[#EA580C] text-white text-[11px] font-bold rounded-full px-2 py-0.5">{{ $sidebarStats['pagos_por_verificar'] ?? 0 }}</span>
                     </a>
                 </li>
+                @endcan
+                @can('clientes.ver')
                 <li>
                     <a href="{{ route('admin.clients.lista') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">👥</span>
                         <span class="font-medium">Clientes</span>
                     </a>
                 </li>
+                @endcan
+                @can('pedidos.crear')
                 <li>
                     <a href="{{ route('admin.ventalocal.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">🏷️</span>
                         <span class="font-medium">Venta Local</span>
                     </a>
                 </li>
+                @endcan
             </ul>
 
             <div class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-2">INVENTARIO</div>
             <ul class="mb-2">
+                @can('productos.ver')
                 <li>
                     <a href="{{ route('admin.productos.lista') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">🗂️</span>
                         <span class="font-medium">Productos</span>
                     </a>
                 </li>
+                @endcan
+                @can('inventario.ver')
                 <li>
                     <a href="{{ route('admin.inventario.lista') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">📋</span>
                         <span class="font-medium">Movimientos</span>
                     </a>
                 </li>
+                @endcan
+                @can('inventario.ver')
                 <li>
                     <a href="{{ route('admin.inventario.alertas') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">⚠️</span>
@@ -127,19 +142,25 @@ function adminApp() {
                         <span class="ml-auto bg-[#EA580C] text-white text-[11px] font-bold rounded-full px-2 py-0.5">{{ $sidebarStats['alertas_stock'] ?? 0 }}</span>
                     </a>
                 </li>
+                @endcan
             </ul>
 
+            @can('reportes.ver')
             <div class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-2">INTELIGENCIA</div>
             <ul class="mb-2">
                 <li>
                     <a href="{{ route('admin.reports.index') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] {{ request()->routeIs('admin.reports.*') ? 'border-[#1D4ED8] bg-[#475569] text-[#F1F5F9] font-semibold' : 'border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]' }}">
                         <span class="text-xl">🤖</span>
-                        <span class="font-medium">Reportes ML</span>
+                        <span class="font-medium">Reportes</span>
                     </a>
                 </li>
             </ul>
 
+            @endcan
+
+            @canany(['usuarios.gestionar', 'respaldos.gestionar', 'auditoria.ver', 'configuracion.editar'])
             <div class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-2">SISTEMA</div>
+            @endcanany
             <ul>
                 @can('usuarios.gestionar')
                 <li>

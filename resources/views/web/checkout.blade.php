@@ -15,6 +15,30 @@
 
   <div class="section-title">Finalizar pedido</div>
 
+  {{-- Errores que no pertenecen a un campo (cuenta bloqueada, stock, mínimo al mayor, método no disponible) --}}
+  @php
+    $erroresGenerales = collect($errors->getMessages())
+        ->except(['entrega_nombre', 'entrega_apellido', 'entrega_telefono', 'entrega_direccion', 'entrega_ciudad', 'comprobante',
+                  'monto_pagado', 'fecha_pago', 'numero_referencia', 'banco_origen', 'cedula_pagador', 'cf-turnstile-response'])
+        ->flatten();
+  @endphp
+  {{-- Resultado de la reserva temporal de stock al entrar al checkout --}}
+  <div x-show="reserveResult && reserveResult.ok === false" x-cloak role="alert" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.4);color:#F59E0B;border-radius:.6rem;padding:.8rem 1rem;margin-bottom:1rem;font-size:.9rem">
+    <strong>Algunos productos no tienen stock suficiente.</strong> Ajusta las cantidades en el carrito antes de confirmar.
+    <template x-for="r in (reserveResult?.results || []).filter(x => !x.ok)">
+      <div x-text="r.mensaje"></div>
+    </template>
+  </div>
+
+  @if($erroresGenerales->isNotEmpty())
+    <div role="alert" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);color:#EF4444;border-radius:.6rem;padding:.8rem 1rem;margin-bottom:1rem;font-size:.9rem">
+      <strong>No se pudo enviar el pedido.</strong>
+      @foreach($erroresGenerales as $mensaje)
+        <div>{{ $mensaje }}</div>
+      @endforeach
+    </div>
+  @endif
+
   <form action="{{ route('web.checkout.store') }}" method="POST" enctype="multipart/form-data" class="checkout-grid">
     @csrf
 

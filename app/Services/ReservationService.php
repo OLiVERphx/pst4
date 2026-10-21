@@ -33,7 +33,7 @@ class ReservationService
 
                 $disponible = $producto->stock - $producto->stock_reservado;
                 if ($disponible < $item->cantidad) {
-                    $results[] = ['ok' => false, 'item' => $item->id, 'mensaje' => "Stock insuficiente para producto {$producto->id}"];
+                    $results[] = ['ok' => false, 'item' => $item->id, 'mensaje' => "Solo quedan " . max(0, $producto->stock - $producto->stock_reservado) . " unidad(es) disponibles de {$producto->nombre}."];
                     continue;
                 }
 

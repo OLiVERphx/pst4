@@ -78,7 +78,7 @@ class ValidarMinimoMayorTest extends TestCase
             'precio_detal' => 15.00,
             'precio_mayor' => 12.00,
             'precio_costo' => 8.00,
-            'min_cantidad_mayor' => 10,
+            'min_cantidad_mayor' => 2,
             'stock' => 100,
             'stock_minimo' => 1,
             'imagenes' => null,
@@ -137,7 +137,7 @@ class ValidarMinimoMayorTest extends TestCase
             'precio_detal' => 30.00,
             'precio_mayor' => 10.00,
             'precio_costo' => 5.00,
-            'min_cantidad_mayor' => 10,
+            'min_cantidad_mayor' => 1,
             'stock' => 50,
             'stock_minimo' => 1,
             'imagenes' => null,
@@ -201,5 +201,26 @@ class ValidarMinimoMayorTest extends TestCase
         $this->assertNotNull($order);
         $this->assertEquals('pendiente', $order->estado);
         $this->assertEquals(50.00, $order->subtotal);
+    }
+
+    public function test_cada_producto_al_mayor_exige_su_cantidad_minima()
+    {
+        $product = Product::create([
+            'codigo' => 'P009', 'nombre' => 'Funda caja', 'slug' => 'funda-caja',
+            'marca_id' => $this->marcaId, 'categoria_id' => $this->categoriaId,
+            'precio_detal' => 30.00, 'precio_mayor' => 25.00, 'min_cantidad_mayor' => 6, 'stock' => 100,
+        ]);
+        $servicio = app(ServicioPedidos::class);
+
+        // 5 unidades x 25 = 125 USD supera el mínimo general (50 USD), pero no el del producto (6)
+        try {
+            $servicio->crearPedidoDesdeLineas([['producto_id' => $product->id, 'cantidad' => 5, 'precio' => 25.00, 'tipo' => 'mayor']], $this->clienteId, 1);
+            $this->fail('Debía rechazar por el mínimo del producto');
+        } catch (\Exception $e) {
+            $this->assertStringContainsString('al menos 6 unidades', $e->getMessage());
+        }
+
+        $pedido = $servicio->crearPedidoDesdeLineas([['producto_id' => $product->id, 'cantidad' => 6, 'precio' => 25.00, 'tipo' => 'mayor']], $this->clienteId, 1);
+        $this->assertEquals(150.00, (float) $pedido->total);
     }
 }

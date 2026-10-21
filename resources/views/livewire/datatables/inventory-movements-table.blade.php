@@ -15,7 +15,9 @@
         </select>
 
         <div class="ml-auto">
-            <button wire:click="openCreate" class="bg-gradient-to-r from-[#1D4ED8] to-[#0D9488] text-white px-3 py-2 rounded-lg">Nuevo movimiento</button>
+            @can('inventario.ajustar')
+                <button wire:click="openCreate" class="bg-gradient-to-r from-[#1D4ED8] to-[#0D9488] text-white px-3 py-2 rounded-lg">Nuevo movimiento</button>
+            @endcan
         </div>
     </div>
 
@@ -80,17 +82,17 @@
                 </div>
                 <div>
                     <label class="block text-sm text-[#A0AEC0]">Tipo</label>
-                    <select wire:model="form.tipo" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]">
+                    <select wire:model.live="form.tipo" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]">
                         <option value="entrada">Entrada</option>
                         <option value="salida">Salida</option>
-                        <option value="ajuste">Ajuste</option>
-                        <option value="reserva">Reserva</option>
-                        <option value="liberacion">Liberación</option>
+                        <option value="ajuste">Ajuste (conteo físico)</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-sm text-[#A0AEC0]">Cantidad</label>
-                    <input wire:model="form.cantidad" type="number" min="1" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]" />
+                    <label class="block text-sm text-[#A0AEC0]" x-text="$wire.form.tipo === 'ajuste' ? 'Stock contado' : 'Cantidad'">Cantidad</label>
+                    <input wire:model="form.cantidad" type="number" min="0" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]" />
+                    @error('form.cantidad')<span class="block text-xs text-red-400">{{ $message }}</span>@enderror
+                    <span x-show="$wire.form.tipo === 'ajuste'" class="block text-[11px] text-[#A0AEC0]">Escribe las unidades que hay físicamente; el sistema registra la diferencia.</span>
                 </div>
                 <div>
                     <label class="block text-sm text-[#A0AEC0]">Referencia</label>
@@ -99,6 +101,7 @@
                 <div class="sm:col-span-2">
                     <label class="block text-sm text-[#A0AEC0]">Notas</label>
                     <textarea wire:model="form.notas" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]"></textarea>
+                    @error('form.notas')<span class="block text-xs text-red-400">{{ $message }}</span>@enderror
                 </div>
             </div>
 

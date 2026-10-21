@@ -54,6 +54,14 @@ class ServicioPedidos
                     throw new \Exception('Stock insuficiente para ' . $producto->nombre);
                 }
 
+                // Al mayor: cada producto exige su cantidad mínima (en la tienda y en venta local)
+                if (($l['tipo'] ?? null) === 'mayor') {
+                    $minimo = (int) ($producto->min_cantidad_mayor ?: (\App\Models\Configuracion::instance()?->minimo_unidades_mayor ?? 10));
+                    if ($l['cantidad'] < $minimo) {
+                        throw new \Exception("Para comprar {$producto->nombre} al mayor se necesitan al menos {$minimo} unidades (llevas {$l['cantidad']}).");
+                    }
+                }
+
                 $precio = $l['precio'];
                 $sub = $precio * $l['cantidad'];
                 $subtotal += $sub;
@@ -115,21 +123,9 @@ class ServicioPedidos
                     'subtotal' => $d['subtotal'],
                 ]);
 
+                // El checkout libera la reserva temporal del cliente antes de crear el pedido,
+                // así que aquí no se toca stock_reservado: el movimiento de salida descuenta el stock.
                 $producto = Product::where('id', $d['producto']->id)->lockForUpdate()->first();
-                $antes = ['stock' => $producto->stock, 'stock_reservado' => $producto->stock_reservado];
-
-                // Solo liberar la reserva del producto; el movimiento de inventario hace el descuento real de stock.
-                $producto->stock_reservado = max(0, $producto->stock_reservado - $d['cantidad']);
-                $producto->save();
-
-                // Registrar auditoría por producto
-                ServicioAuditoria::registrar(
-                    'inventario.producto_actualizado',
-                    $producto,
-                    $antes,
-                    ['stock' => $producto->stock, 'stock_reservado' => $producto->stock_reservado],
-                    $vendedorId
-                );
 
                 // Registrar movimiento de inventario
                 $this->inventarioService->registrarMovimiento(
@@ -285,8 +281,16 @@ class ServicioPedidos
      * @param string $reason
      * @return Order
      */
+    /** Estados en los que un pedido ya no se puede cancelar (la mercancía se entregó o ya se liberó). */
+    public const ESTADOS_NO_CANCELABLES = ['cancelado', 'completado', 'entregado'];
+
     public function cancel(Order $order, User $admin, string $reason): Order
     {
+        // Cancelar dos veces devolvía el stock dos veces; cancelar uno entregado lo devolvía sin tener la mercancía
+        if (in_array($order->estado, self::ESTADOS_NO_CANCELABLES, true)) {
+            throw new \RuntimeException('Un pedido ' . \App\Helpers\LabelHelper::translateStatus($order->estado) . ' no se puede cancelar.');
+        }
+
         $antes = [
             'estado' => $order->estado,
             'cancelado_por' => $order->cancelado_por,

@@ -46,8 +46,9 @@ class VentaLocal extends Component
             return;
         }
 
-        $this->results = Product::where('nombre', 'like', "%{$q}%")
-            ->orWhere('codigo', 'like', "%{$q}%")
+        // Solo productos activos: los inactivos no se venden
+        $this->results = Product::where('activo', true)
+            ->where(fn ($sub) => $sub->where('nombre', 'like', "%{$q}%")->orWhere('codigo', 'like', "%{$q}%"))
             ->limit(20)
             ->get(['id','nombre','codigo','precio_detal','precio_mayor','stock'])
             ->map(fn($p) => [
@@ -68,13 +69,9 @@ class VentaLocal extends Component
             return;
         }
 
+        // Al mayor se agrega directamente con la cantidad mínima del producto
         if ($tipo === 'mayor') {
-            $minConfig = \App\Models\Configuracion::instance()?->minimo_unidades_mayor ?? 10;
-            $required = $producto->min_cantidad_mayor ?? $minConfig;
-            if ($cantidad < $required) {
-                $this->addError('items', "Para agregar este producto como mayor se requieren al menos {$required} unidad(es). Cantidad propuesta: {$cantidad}.");
-                return;
-            }
+            $cantidad = max($cantidad, $this->minimoMayor($producto));
         }
 
         $precio = $tipo === 'mayor' ? $producto->precio_mayor : $producto->precio_detal;
@@ -102,7 +99,19 @@ class VentaLocal extends Component
     public function updateQuantity(int $index, int $cantidad)
     {
         if (!isset($this->items[$index])) return;
-        $this->items[$index]['cantidad'] = max(1, (int)$cantidad);
+        $minimo = 1;
+        if ($this->items[$index]['tipo'] === 'mayor' && ($producto = Product::find($this->items[$index]['producto_id']))) {
+            $minimo = $this->minimoMayor($producto);
+            if ($cantidad < $minimo) {
+                $this->addError('items', "Al mayor, {$producto->nombre} se vende desde {$minimo} unidades.");
+            }
+        }
+        $this->items[$index]['cantidad'] = max($minimo, (int)$cantidad);
+    }
+
+    private function minimoMayor(Product $producto): int
+    {
+        return (int) ($producto->min_cantidad_mayor ?: (\App\Models\Configuracion::instance()?->minimo_unidades_mayor ?? 10));
     }
 
     /**

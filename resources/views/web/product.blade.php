@@ -20,7 +20,8 @@
 
       <div class="modal-body" x-data="{
         cantidad: 1,
-        tipo: 'detal'
+        tipo: 'detal',
+        minMayor: {{ $minMayor }}
       }">
         <div class="modal-brand">{{ $product->brand?->nombre }}</div>
         <div class="modal-name">{{ $product->nombre }}</div>
@@ -28,7 +29,7 @@
 
         <div class="modal-price-row">
           <div class="modal-price">${{ number_format($product->precio_detal, 2) }}</div>
-          <div class="modal-price-mayor">Mayor: ${{ number_format($product->precio_mayor, 2) }}</div>
+          <div class="modal-price-mayor">Mayor: ${{ number_format($product->precio_mayor, 2) }} desde {{ $minMayor }} uds.</div>
         </div>
 
         <div class="modal-stock">
@@ -47,7 +48,7 @@
         <div class="modal-qty-row">
           <span class="qty-label">Cantidad:</span>
           <div class="qty-ctrl">
-            <button type="button" class="qty-btn" @click="cantidad = Math.max(1, cantidad - 1)">−</button>
+            <button type="button" class="qty-btn" @click="cantidad = Math.max(tipo === 'mayor' ? minMayor : 1, cantidad - 1)">−</button>
             <span class="qty-val" x-text="cantidad">1</span>
             <button type="button" class="qty-btn" @click="cantidad++">+</button>
           </div>
@@ -55,9 +56,12 @@
 
         <div class="modal-type-row">
           <button type="button" class="type-btn" :class="{ active: tipo==='detal' }" @click="tipo='detal'">🛍️ Al detal</button>
-          <button type="button" class="type-btn" :class="{ active: tipo==='mayor' }" @click="tipo='mayor'">📦 Al mayor</button>
+          <button type="button" class="type-btn" :class="{ active: tipo==='mayor' }" @click="tipo='mayor'; cantidad = Math.max(cantidad, minMayor)">📦 Al mayor</button>
         </div>
 
+        @if($product->stock <= 0)
+        <button class="modal-add-btn" type="button" disabled style="opacity:.5;cursor:not-allowed">Sin stock</button>
+        @else
         <button class="modal-add-btn" type="button" @click="$dispatch('agregar-carrito', { producto: {{ json_encode([
           'id'=>$product->id,
           'nombre'=>$product->nombre,
@@ -68,6 +72,7 @@
         ]) }}, cantidad: cantidad, tipo: tipo })">
           Agregar al carrito
         </button>
+        @endif
 
         <div class="modal-specs">
           <div class="modal-specs-title">Especificaciones</div>

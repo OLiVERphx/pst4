@@ -93,6 +93,7 @@ class CatalogController extends Controller
         $categorias = \App\Models\Category::where('activo',true)->get();
         $marcas     = \App\Models\Brand::all();
 
+        $minMayor = (int)(\App\Models\Configuracion::instance()?->minimo_unidades_mayor ?? 10);
         $productosJson = $productos->map(fn($p) => [
             'id'           => $p->id,
             'codigo'       => $p->codigo,
@@ -102,6 +103,7 @@ class CatalogController extends Controller
             'categoria'    => $p->category?->nombre,
             'precio_detal' => (float)$p->precio_detal,
             'precio_mayor' => (float)$p->precio_mayor,
+            'min_mayor'    => (int)($p->min_cantidad_mayor ?: $minMayor),
             'stock'        => (int)$p->stock,
             'stock_minimo' => (int)$p->stock_minimo,
             'emoji'        => $emojis[$p->category?->nombre] ?? '📦',
@@ -132,6 +134,8 @@ class CatalogController extends Controller
             // fallback a los relacionados por categoría si algo falla
         }
 
-        return view('web.product', compact('product','relacionados','emojis'));
+        $minMayor = (int)($product->min_cantidad_mayor ?: (\App\Models\Configuracion::instance()?->minimo_unidades_mayor ?? 10));
+
+        return view('web.product', compact('product','relacionados','emojis','minMayor'));
     }
 }

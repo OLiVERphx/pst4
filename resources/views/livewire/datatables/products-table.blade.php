@@ -25,7 +25,9 @@
             @can('productos.editar')
                 <a href="{{ route('admin.productos.importar') }}" class="border border-[#475569] hover:bg-[#475569] text-[#F1F5F9] px-3 py-2 rounded-lg text-sm">Importar Excel</a>
             @endcan
-            <button wire:click="openCreate" class="bg-gradient-to-r from-[#1D4ED8] to-[#0D9488] text-white px-3 py-2 rounded-lg">Nuevo producto</button>
+            @can('productos.editar')
+                <button wire:click="openCreate" class="bg-gradient-to-r from-[#1D4ED8] to-[#0D9488] text-white px-3 py-2 rounded-lg">Nuevo producto</button>
+            @endcan
         </div>
     </div>
 
@@ -67,9 +69,11 @@
                             <span class="{{ $activoBadge }} px-2 py-1 rounded-full text-xs font-semibold">{{ $product->activo ? 'Activo' : 'Inactivo' }}</span>
                         </td>
                         <td class="px-4 py-2 text-right">
-                            <button wire:click="openEdit({{ $product->id }})" class="text-[#1D4ED8] mr-2">Editar</button>
-                            <button wire:click="toggleActive({{ $product->id }})" class="text-[#EA580C] mr-2">Toggle</button>
-                            <button wire:click="delete({{ $product->id }})" class="text-red-500">Eliminar</button>
+                            @can('productos.editar')
+                                <button wire:click="openEdit({{ $product->id }})" class="text-[#60A5FA] mr-2">Editar</button>
+                                <button wire:click="toggleActive({{ $product->id }})" class="text-[#EA580C] mr-2">{{ $product->activo ? 'Desactivar' : 'Activar' }}</button>
+                                <button wire:click="delete({{ $product->id }})" wire:confirm="¿Eliminar «{{ $product->nombre }}» del catálogo? Su historial de ventas se conserva." class="text-red-500">Eliminar</button>
+                            @endcan
                         </td>
                     </tr>
                 @endforeach
@@ -139,6 +143,11 @@
                     <div>
                         <label class="block text-sm text-[#A0AEC0]">Stock mínimo</label>
                         <input wire:model="form.stock_minimo" type="number" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]" />
+                    </div>
+                    <div>
+                        <label class="block text-sm text-[#A0AEC0]">Cantidad mínima al mayor</label>
+                        <input wire:model="form.min_cantidad_mayor" type="number" min="1" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]" />
+                        <span class="block text-[11px] text-[#A0AEC0]">Unidades desde las que aplica el precio al mayor.</span>
                     </div>
                 </div>
 

@@ -20,6 +20,7 @@ class OrdersTable extends Component
 
     // ?q= en la URL: el buscador de la barra superior enlaza aquí con el término
     #[Url(as: 'q', except: '')]
+    public $motivoCancelacion = '';
     public $search = '';
     public $statusFilter = '';
     public $typeFilter = '';
@@ -116,11 +117,24 @@ class OrdersTable extends Component
         $this->dispatch('order-updated');
     }
 
-    public function cancel(Order $order, $reason, ServicioPedidos $service)
+    public function cancel(Order $order, $reason = null)
     {
         Gate::authorize('pedidos.anular');
+        $service = app(ServicioPedidos::class);
+        $this->resetErrorBag('motivoCancelacion');
 
-        $updated = $service->cancel($order, Auth::user(), $reason);
+        $reason = trim((string) ($reason ?? $this->motivoCancelacion));
+        if ($reason === '' || mb_strlen($reason) > 255) {
+            $this->addError('motivoCancelacion', 'Escribe el motivo de la cancelación (máximo 255 caracteres).');
+            return;
+        }
+        try {
+            $updated = $service->cancel($order, Auth::user(), $reason);
+        } catch (\RuntimeException $e) {
+            $this->addError('motivoCancelacion', $e->getMessage());
+            return;
+        }
+        $this->motivoCancelacion = '';
         if ($this->selectedOrder && $this->selectedOrder->id === $order->id) {
             $this->selectedOrder = $updated->load('items.product', 'user', 'payment');
         }

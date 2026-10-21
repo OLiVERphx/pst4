@@ -29,39 +29,45 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Obtiene el carrito activo del usuario en BD, o lo sincroniza/crea si viene del cliente.
-     * Siempre recalcula precios y disponibilidad contra la base de datos (Regla #1).
+     * Carrito del usuario en BD, sincronizado con el que envía el navegador (localStorage).
+     * Antes se libera la reserva previa del usuario: si no, cada visita al checkout reservaba otra vez
+     * y la compra contaba su propia reserva como stock ocupado (fallaba al llevar las últimas unidades).
+     * Los precios y la disponibilidad se recalculan siempre contra la base de datos (Regla #1).
      */
     protected function getOrCreateUserCart(Request $request): ?Cart
     {
         $userId = auth()->id();
-        $cart = Cart::where('usuario_id', $userId)->where('estado', 'active')->with('items')->first();
+        $reservas = app(\App\Services\ReservationService::class);
 
-        // Si el carrito en BD no existe o está vacío, pero el cliente envía items (desde localStorage)
+        Cart::where('usuario_id', $userId)->where('estado', 'reserved')->get()
+            ->each(fn (Cart $previo) => $reservas->releaseCartReservations($previo));
+
+        // Un solo carrito activo por usuario
+        $activos = Cart::where('usuario_id', $userId)->where('estado', 'active')->with('items')->orderByDesc('id')->get();
+        $cart = $activos->shift();
+        $activos->each->delete();
+
         $rawItems = $request->input('items');
         if (is_string($rawItems)) {
             $rawItems = json_decode($rawItems, true);
         }
 
-        if ((!$cart || $cart->items->isEmpty()) && !empty($rawItems) && is_array($rawItems)) {
-            if (!$cart) {
-                $cart = Cart::create(['usuario_id' => $userId, 'estado' => 'active']);
-            }
+        if (!empty($rawItems) && is_array($rawItems)) {
+            $cart ??= Cart::create(['usuario_id' => $userId, 'estado' => 'active']);
+            $cart->items()->delete();
 
             foreach ($rawItems as $i) {
                 $productId = $i['id'] ?? $i['producto_id'] ?? null;
                 $cantidad = max(1, (int)($i['cantidad'] ?? 1));
                 $tipo = ($i['tipo'] ?? 'detal') === 'mayor' ? 'mayor' : 'detal';
 
-                // Recalcular siempre contra la base de datos en el servidor
                 $product = Product::where('id', $productId)->where('activo', true)->first();
-                if ($product && $cantidad > 0) {
-                    $precioUnitario = $tipo === 'mayor' ? $product->precio_mayor : $product->precio_detal;
+                if ($product) {
                     $cart->items()->create([
                         'producto_id'     => $product->id,
                         'cantidad'        => $cantidad,
                         'tipo'            => $tipo,
-                        'precio_unitario' => $precioUnitario,
+                        'precio_unitario' => $tipo === 'mayor' ? $product->precio_mayor : $product->precio_detal,
                     ]);
                 }
             }
@@ -118,18 +124,18 @@ class CheckoutController extends Controller
         // Regla de negocio: no se permite pago en efectivo con entrega a domicilio
         // (no hay forma de confirmar el pago antes de despachar el pedido).
         if ($request->tipo_entrega === 'delivery' && $request->metodo_pago === 'fisico') {
-            return back()->withErrors(['metodo_pago' => 'El pago en efectivo no está disponible para pedidos con delivery. Elegí retiro en tienda o un método de pago en línea.']);
+            return back()->withInput()->withErrors(['metodo_pago' => 'El pago en efectivo no está disponible para pedidos con delivery. Elegí retiro en tienda o un método de pago en línea.']);
         }
 
         // Regla de negocio: si el cliente está marcado como bloqueado, no puede completar checkout.
         if (auth()->check() && optional(auth()->user())->bloqueado) {
-            return back()->withErrors(['blocked' => 'Su cuenta está bloqueada. Contacte a soporte para completar el pago.']);
+            return back()->withInput()->withErrors(['blocked' => 'Su cuenta está bloqueada. Contacte a soporte para completar el pago.']);
         }
 
         // Recuperar o sincronizar carrito persistente del usuario
         $cart = $this->getOrCreateUserCart($request);
         if (!$cart || $cart->items->isEmpty()) {
-            return back()->withErrors(['items' => 'El carrito está vacío.']);
+            return back()->withInput()->withErrors(['items' => 'El carrito está vacío.']);
         }
 
         $inventario = app(ServicioInventario::class);
@@ -195,7 +201,7 @@ class CheckoutController extends Controller
 
             return redirect()->route('web.order.confirmed', $order->numero_pedido);
         } catch (\Exception $e) {
-            return back()->withErrors(['stock' => $e->getMessage()]);
+            return back()->withInput()->withErrors(['stock' => $e->getMessage()]);
         }
     }
 

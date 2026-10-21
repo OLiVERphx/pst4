@@ -167,7 +167,8 @@ Route::get('/catalogo',          [\App\Http\Controllers\Web\CatalogController::c
 Route::get('/producto/{product:slug}', [\App\Http\Controllers\Web\CatalogController::class, 'show'])
     ->name('web.product');
 
-Route::middleware('auth')->group(function () {
+// 'active': una cuenta desactivada desde el panel no puede comprar ni ver su cuenta
+Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/checkout',  [\App\Http\Controllers\Web\CheckoutController::class, 'index'])
         ->name('web.checkout');
     Route::post('/checkout/reserve', [\App\Http\Controllers\Web\CheckoutController::class, 'reserve'])

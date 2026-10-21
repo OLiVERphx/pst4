@@ -24,7 +24,8 @@ class StockAlerts extends Component
 
     public function render()
     {
-        $alerts = StockAlert::with('product')->orderByDesc('created_at')->get();
+        // Primero las pendientes; las leídas quedan como historial
+        $alerts = StockAlert::with('product')->orderBy('leido')->orderByDesc('created_at')->limit(100)->get();
         return view('livewire.datatables.stock-alerts', [
             'alerts' => $alerts,
         ]);
