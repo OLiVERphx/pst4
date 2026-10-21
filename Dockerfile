@@ -1,7 +1,8 @@
 # Imagen de la tienda y el panel (Laravel) para Railway u otro servicio de contenedores.
 # Un solo contenedor corre: nginx + php-fpm + el planificador (schedule:work), para pagar un solo servicio.
 # El microservicio de analítica es otro servicio: ml-service/Dockerfile.
-ARG PHP_IMAGE=php:8.3-fpm-bookworm
+# Versión fijada: 8.3.36 corrige CVE-2026-109618 y CVE-2026-109619 (ejecución remota de código, 21/10/2026)
+ARG PHP_IMAGE=php:8.3.36-fpm-bookworm
 ARG COMPOSER_IMAGE=composer:2
 
 FROM ${COMPOSER_IMAGE} AS composer

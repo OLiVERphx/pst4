@@ -141,6 +141,24 @@ PORT=8001
 - **Si el crédito se acaba, Railway detiene los servicios.** Los datos del volumen se conservan un tiempo limitado después (30 días en el plan de prueba).
 - **Actualizar:** cada `git push` a la rama conectada vuelve a desplegar. Las migraciones nuevas se aplican solas al arrancar.
 
+## Rotar credenciales (si las variables de entorno quedaron expuestas)
+
+Hazlo con los despliegues habilitados, en este orden, y anota cada valor nuevo fuera de Railway.
+
+1. **Contraseñas de la base de datos.** En la consola de MySQL (con el usuario administrador):
+   `ALTER USER 'sw_app'@'%' IDENTIFIED BY '<nueva>';` y lo mismo para `sw_migrador` y `sw_ml`.
+   Luego actualiza `DB_PASSWORD`, `DB_MIGRATION_PASSWORD` (servicio `web`) y `ML_DB_PASSWORD` (servicio `ml`).
+2. **`ML_API_KEY`:** genera una nueva y ponla igual en `web` y en `ml`.
+3. **Captcha:** en Cloudflare Turnstile, rota la clave secreta y actualiza `TURNSTILE_SECRET_KEY`.
+4. **`APP_KEY`** (cifra cédulas, teléfonos, direcciones y el 2FA):
+   - Genera una nueva con `php artisan key:generate --show` (en tu equipo).
+   - En `web`: `APP_PREVIOUS_KEYS` = la clave anterior y `APP_KEY` = la nueva. Despliega.
+   - En la consola del servicio: `php artisan seguridad:rotar-clave --simular` y, si no hay avisos, `php artisan seguridad:rotar-clave`.
+   - Borra `APP_PREVIOUS_KEYS`. Todos deberán iniciar sesión de nuevo.
+5. **`BACKUP_ARCHIVE_PASSWORD`:** pon una nueva. Guarda la anterior: los respaldos viejos se abren con ella.
+6. **Contraseña del superadministrador:** cámbiala desde Mi cuenta (`ADMIN_PASSWORD` solo se usa en el primer arranque).
+7. Revisa la Auditoría del panel buscando inicios de sesión que no reconozcas.
+
 ## Si algo falla
 
 | Síntoma en los logs | Causa y arreglo |
