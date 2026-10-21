@@ -53,7 +53,8 @@ class TasaBcvTest extends TestCase
 
         $this->actingAs($admin)->get(route('admin.settings.index'))
             ->assertOk()
-            ->assertSee('Vigente desde');
+            ->assertSee('Bs 45,25', false)
+            ->assertSee('(manual)', false);
     }
 
     #[Test]

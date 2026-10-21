@@ -167,11 +167,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm text-[#A0AEC0] mb-1">Tasa BCV (Bs por USD)</label>
-                    <input type="number" step="any" name="tasa_bcv" value="{{ old('tasa_bcv', $config->tasa_bcv ?? '') }}" class="w-full bg-[#475569] border border-[#384457] rounded-lg px-3 py-2 text-sm text-[#F1F5F9]" />
                     @php $ultimaTasa = \App\Models\TasaBcv::vigenteEn(); @endphp
+                    {{-- Vacío a propósito: la tasa vigente se muestra abajo y solo se escribe una para cargarla a mano --}}
+                    <input type="number" step="any" name="tasa_bcv" value="{{ old('tasa_bcv') }}" placeholder="{{ $ultimaTasa ? number_format($ultimaTasa->tasa, 2, ',', '.') . ' (vigente)' : 'Ej. 200,50' }}" class="w-full bg-[#475569] border border-[#384457] rounded-lg px-3 py-2 text-sm text-[#F1F5F9] placeholder-[#A0AEC0]" />
                     <p class="text-xs text-[#A0AEC0] mt-1">
                         @if($ultimaTasa)
-                            Vigente desde {{ $ultimaTasa->fecha->format('d/m/Y') }} ({{ $ultimaTasa->fuente === 'dolarapi' ? 'automática' : 'manual' }}). Se actualiza sola cada hora.
+                            Vigente: <strong class="text-[#F1F5F9]">Bs {{ number_format($ultimaTasa->tasa, 2, ',', '.') }}</strong> desde {{ $ultimaTasa->fecha->format('d/m/Y') }} ({{ $ultimaTasa->fuente === 'dolarapi' ? 'automática' : 'manual' }}). Se actualiza sola cada hora; escribe una tasa solo para cargarla a mano.
                         @else
                             Aún no hay historial de tasas: carga la de hoy.
                         @endif
