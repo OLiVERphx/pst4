@@ -114,7 +114,7 @@ function adminApp() {
                     </a>
                 </li>
                 <li>
-                    <a href="{{ url('/admin/inventory/alerts') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
+                    <a href="{{ route('admin.inventario.alertas') }}" class="flex items-center gap-3 px-4 py-2.5 text-sm border-l-[3px] border-transparent hover:bg-[#475569] hover:text-[#F1F5F9] text-[#A0AEC0]">
                         <span class="text-xl">⚠️</span>
                         <span class="font-medium">Alertas Stock</span>
                         <span class="ml-auto bg-[#EA580C] text-white text-[11px] font-bold rounded-full px-2 py-0.5">{{ $sidebarStats['alertas_stock'] ?? 0 }}</span>

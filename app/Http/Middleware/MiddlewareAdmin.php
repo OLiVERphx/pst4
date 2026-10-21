@@ -16,7 +16,7 @@ class MiddlewareAdmin
         $user = $request->user();
 
         if (!$user || !$user->hasAnyRole(['admin', 'superadmin', 'vendedor'])) {
-            return redirect('/admin/login')->with('error', 'No autorizado');
+            return redirect()->route('admin.login')->with('error', 'No autorizado');
         }
 
         return $next($request);

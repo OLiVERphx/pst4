@@ -4,14 +4,18 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 
 
+// Ruta del panel: ADMIN_PATH (por defecto "admin"). Cambiarla no reemplaza a las
+// contraseñas ni al límite de intentos; solo saca al panel de la ruta que todos prueban.
+$rutaPanel = config('app.admin_path');
+
 // Admin authentication routes
-Route::get('/admin/login', [AdminAuthController::class, 'showLogin'])->name('admin.login');
-Route::post('/admin/login', [AdminAuthController::class, 'login'])->middleware('throttle:5,1');
-Route::post('/admin/logout', [AdminAuthController::class, 'logout'])->middleware('auth')->name('admin.logout');
+Route::get("/{$rutaPanel}/login", [AdminAuthController::class, 'showLogin'])->name('admin.login');
+Route::post("/{$rutaPanel}/login", [AdminAuthController::class, 'login'])->middleware('throttle:5,1');
+Route::post("/{$rutaPanel}/logout", [AdminAuthController::class, 'logout'])->middleware('auth')->name('admin.logout');
 
 // Admin protected routes
 Route::middleware(['auth', 'active', 'admin'])
-    ->prefix('admin')
+    ->prefix($rutaPanel)
     ->name('admin.')
     ->group(function () {
         // El dashboard en sí puede ser visto si pasó el middleware admin, pero lo aseguramos con pedidos.ver como base general

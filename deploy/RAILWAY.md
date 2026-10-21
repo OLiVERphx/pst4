@@ -69,6 +69,7 @@ BACKUP_ARCHIVE_PASSWORD=...             # paso 0
 ADMIN_EMAIL=correo-del-dueño@ejemplo.com
 ADMIN_PASSWORD=...                      # paso 0
 ADMIN_NOMBRE=Administrador
+ADMIN_PATH=admin                        # ruta del panel; ver "Ruta del panel" abajo
 
 ML_SERVICE_URL=http://ml.railway.internal:8001
 ML_API_KEY=...                          # paso 0
@@ -83,9 +84,15 @@ Luego:
 
 El primer arranque tarda unos minutos (migraciones). En los siguientes, el comando de inicialización no cambia nada: ni contraseñas ni permisos.
 
+### Ruta del panel
+
+`ADMIN_PATH` cambia `/admin` por otra ruta (solo minúsculas, números y guiones; 3 a 64 caracteres; un valor inválido vuelve a `admin`). Con `ADMIN_PATH=gestion-7f3k`, el panel queda en `https://tu-dominio/gestion-7f3k/login` y `/admin/login` da 404.
+
+Solo aleja a los robots que prueban `/admin`: **no reemplaza** a una contraseña fuerte, al límite de intentos ni al captcha. Guárdala junto a la contraseña del administrador.
+
 ### Captcha (opcional, recomendado)
 
-Registro, inicio de sesión de clientes y checkout usan Cloudflare Turnstile. Sin las dos variables queda apagado.
+Registro, inicio de sesión (tienda y panel) y checkout usan Cloudflare Turnstile. Sin las dos variables queda apagado.
 
 1. En <https://dash.cloudflare.com> (cuenta gratis) → **Turnstile → Add widget**. Dominio: el de Railway (`xxxx.up.railway.app`). Modo *Managed*.
 2. Agrega en `web`: `TURNSTILE_SITE_KEY=...` y `TURNSTILE_SECRET_KEY=...`.

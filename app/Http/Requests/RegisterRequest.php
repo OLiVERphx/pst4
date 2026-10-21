@@ -22,6 +22,7 @@ class RegisterRequest extends FormRequest
             'telefono' => 'nullable|string',
             'ciudad' => 'nullable|string',
             'direccion' => 'nullable|string',
+            'cf-turnstile-response' => [new \App\Rules\Turnstile()],
         ];
     }
 }

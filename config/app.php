@@ -77,6 +77,14 @@ return [
     |
     */
 
+    // Ruta del panel de administración (sin barras). Solo letras, números y guiones.
+    // Un valor inválido vuelve a "admin".
+    'admin_path' => (function () {
+        $ruta = strtolower(trim((string) env('ADMIN_PATH', 'admin'), " /"));
+
+        return preg_match('/^[a-z0-9][a-z0-9-]{2,63}$/', $ruta) ? $ruta : 'admin';
+    })(),
+
     'admin_email' => env('ADMIN_EMAIL'),
     'admin_password' => env('ADMIN_PASSWORD'),
     'admin_nombre' => env('ADMIN_NOMBRE', 'Administrador'),
