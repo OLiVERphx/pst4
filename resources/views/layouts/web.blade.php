@@ -620,6 +620,18 @@ input, select, textarea { font-family: inherit; }
 .cart-footer {
   padding: 1rem 1.5rem; border-top: 1px solid var(--c-border);
 }
+
+/* FOOTER */
+.footer {
+  margin-top: 3rem; padding: 2rem 1.5rem;
+  border-top: 1px solid var(--c-border);
+  text-align: center; font-size: .82rem; line-height: 1.8; color: var(--c-muted);
+}
+.footer strong { color: var(--c-text); }
+.footer-linea { max-width: 1280px; margin: 0 auto; }
+.footer-linea + .footer-linea { margin-top: .15rem; font-size: .76rem; }
+.footer .sep { margin: 0 .35rem; opacity: .5; }
+.footer .autores { color: var(--c-teal); font-weight: 600; }
 .cart-total-row {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 1rem;
@@ -751,9 +763,12 @@ input, select, textarea { font-family: inherit; }
 
 <!-- FOOTER -->
 <footer class="footer">
-  <strong>Smartphone World C.A.</strong> · Valera, Estado Trujillo ·
-  C.C. Jabreco Center & C.C. Hack Center ·
-  Tienda virtual · <span>Araujo, Oliver · Nava, Ailberth</span> · UPTMBI PNFI 2026
+  <div class="footer-linea">
+    <strong>Smartphone World C.A.</strong><span class="sep">·</span>Valera, Estado Trujillo<span class="sep">·</span>C.C. Jabreco Center &amp; C.C. Hack Center
+  </div>
+  <div class="footer-linea">
+    Tienda virtual<span class="sep">·</span><span class="autores">Araujo, Oliver · Nava, Ailberth</span><span class="sep">·</span>UPTMBI PNFI 2026
+  </div>
 </footer>
 
 @stack('scripts')
