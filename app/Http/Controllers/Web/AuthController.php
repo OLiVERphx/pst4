@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
+use App\Rules\Turnstile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
@@ -29,6 +30,7 @@ class AuthController extends Controller
         $request->validate([
             'email'    => 'required|email',
             'password' => 'required|min:8',
+            'cf-turnstile-response' => [new Turnstile()],
         ]);
 
         $credentials = $request->only('email', 'password');
@@ -53,6 +55,7 @@ class AuthController extends Controller
             'telefono'  => 'nullable|string|max:20',
             'ciudad'    => 'nullable|string|max:80',
             'direccion' => 'nullable|string|max:500',
+            'cf-turnstile-response' => [new Turnstile()],
         ], [
             'name.required'      => 'El nombre es obligatorio.',
             'apellido.required'  => 'El apellido es obligatorio.',

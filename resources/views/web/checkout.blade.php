@@ -216,6 +216,10 @@
         </div>
 
         <div class="form-group">
+          <x-turnstile />
+        </div>
+
+        <div class="form-group">
           <button type="submit" class="form-submit">✅ Confirmar y enviar pedido</button>
         </div>
       </div>

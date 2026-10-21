@@ -37,6 +37,10 @@
       </div>
 
       <div class="form-group">
+        <x-turnstile />
+      </div>
+
+      <div class="form-group">
         <button type="submit" class="form-submit">Iniciar sesión</button>
       </div>
     </form>

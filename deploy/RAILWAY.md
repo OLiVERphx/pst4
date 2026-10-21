@@ -83,6 +83,14 @@ Luego:
 
 El primer arranque tarda unos minutos (migraciones). En los siguientes, el comando de inicialización no cambia nada: ni contraseñas ni permisos.
 
+### Captcha (opcional, recomendado)
+
+Registro, inicio de sesión de clientes y checkout usan Cloudflare Turnstile. Sin las dos variables queda apagado.
+
+1. En <https://dash.cloudflare.com> (cuenta gratis) → **Turnstile → Add widget**. Dominio: el de Railway (`xxxx.up.railway.app`). Modo *Managed*.
+2. Agrega en `web`: `TURNSTILE_SITE_KEY=...` y `TURNSTILE_SECRET_KEY=...`.
+3. Si Cloudflare no responde, por defecto se deja pasar (para no frenar ventas). `TURNSTILE_FAIL_CLOSED=true` bloquea en su lugar.
+
 ## 3. Servicio `ml` (analítica)
 
 1. Paso previo: ejecuta `database/sql/railway/02_usuario_ml.sql` como `root` (mismo método del paso 1.3; activa el TCP Proxy solo mientras lo haces). Las tablas ya existen porque la tienda arrancó.

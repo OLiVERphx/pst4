@@ -119,6 +119,10 @@
         </div>
 
         <div class="form-group" style="margin-top:1.5rem">
+          <x-turnstile />
+        </div>
+
+        <div class="form-group" style="margin-top:1rem">
           <button type="submit" class="form-submit" style="display:flex;align-items:center;justify-content:center;gap:.5rem">
             <span>Crear mi cuenta y guardar datos</span>
             <span>✓</span>
@@ -141,7 +145,7 @@
 <script>
 function registerWizard() {
   return {
-    paso: {{ ($errors->has('cedula') || $errors->has('telefono') || $errors->has('ciudad') || $errors->has('direccion')) ? 2 : 1 }},
+    paso: {{ ($errors->has('cedula') || $errors->has('telefono') || $errors->has('ciudad') || $errors->has('direccion') || $errors->has('cf-turnstile-response')) ? 2 : 1 }},
     name: '{{ old('name') }}',
     apellido: '{{ old('apellido') }}',
     email: '{{ old('email') }}',

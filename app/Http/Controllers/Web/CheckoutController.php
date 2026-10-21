@@ -112,6 +112,7 @@ class CheckoutController extends Controller
             'moneda_pagada'     => 'nullable|in:VES,USD,USDT',
             'banco_origen'      => 'nullable|string|max:60',
             'cedula_pagador'    => ['nullable', 'string', 'max:15', 'regex:/^[VEJGPvejgp]?-?\d{6,9}$/'],
+            'cf-turnstile-response' => [new \App\Rules\Turnstile()],
         ]);
 
         // Regla de negocio: no se permite pago en efectivo con entrega a domicilio

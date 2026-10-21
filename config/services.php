@@ -42,4 +42,12 @@ return [
         'key' => env('ML_API_KEY'),
     ],
 
+    // Captcha Cloudflare Turnstile. Sin clave secreta queda desactivado.
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+        // true = si Cloudflare no responde, se bloquea (por defecto se deja pasar)
+        'fail_closed' => (bool) env('TURNSTILE_FAIL_CLOSED', false),
+    ],
+
 ];
