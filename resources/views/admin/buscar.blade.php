@@ -14,6 +14,12 @@
 
 @section('content')
 <div class="container mx-auto py-6 space-y-4">
+    {{-- En el celular la barra superior no tiene espacio para el buscador --}}
+    <form method="GET" action="{{ route('admin.buscar') }}" role="search" class="sm:hidden">
+        <input type="search" name="q" value="{{ $q }}" minlength="2" maxlength="100" autofocus
+               placeholder="Pedido, producto o cliente..." aria-label="Buscar en el panel"
+               class="w-full px-4 py-2.5 bg-[#475569] border border-[#475569] rounded-lg text-sm text-[#F1F5F9] focus:border-[#1D4ED8]" />
+    </form>
     @if (mb_strlen($q) < 2)
         <div class="{{ $card }} text-sm text-[#A0AEC0]">Escribe al menos 2 caracteres: número de pedido, nombre o código de producto, nombre, correo o cédula de cliente.</div>
     @elseif (! $secciones)

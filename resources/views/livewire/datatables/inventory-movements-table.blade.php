@@ -1,8 +1,8 @@
 <div>
-    <div class="p-3 border-b border-[#475569] flex items-center gap-2">
-        <div class="relative">
+    <div class="p-3 border-b border-[#475569] flex flex-wrap items-center gap-2">
+        <div class="relative w-full sm:w-auto">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AEC0]">🔍</span>
-            <input wire:model.live="search" type="text" placeholder="Buscar producto" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm w-56 pl-10 text-[#F1F5F9] placeholder-[#A0AEC0] focus:border-[#1D4ED8]" />
+            <input wire:model.live="search" type="text" placeholder="Buscar producto" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm w-full sm:w-56 pl-10 text-[#F1F5F9] placeholder-[#A0AEC0] focus:border-[#1D4ED8]" />
         </div>
 
         <select wire:model="typeFilter" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm text-[#F1F5F9]">
@@ -19,7 +19,7 @@
         </div>
     </div>
 
-    <div class="bg-[#334155] border border-[#475569] rounded-xl overflow-hidden">
+    <div class="bg-[#334155] border border-[#475569] rounded-xl overflow-x-auto">
         <table class="min-w-full divide-y divide-[#475569]">
             <thead class="bg-[#475569] text-xs uppercase tracking-wide text-[#A0AEC0]">
                 <tr>
@@ -46,7 +46,7 @@
                         }
                     @endphp
                     <tr class="hover:bg-[#475569]">
-                        <td class="px-4 py-2 text-sm text-[#F1F5F9]">{{ $m->created_at->format('Y-m-d H:i') }}</td>
+                        <td class="px-4 py-2 text-sm text-[#F1F5F9] whitespace-nowrap">{{ $m->created_at->format('Y-m-d H:i') }}</td>
                         <td class="px-4 py-2 text-sm text-[#F1F5F9]">{{ $m->product?->nombre }}</td>
                         <td class="px-4 py-2 text-sm">
                             <span class="px-2 py-1 rounded-full text-xs {{ $tipoClass }}">{{ $m->tipo }}</span>
@@ -65,10 +65,10 @@
     </div>
 
     <!-- Modal -->
-    <div x-data wire:ignore.self x-show="$wire.showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="bg-[#2B3346] rounded p-4 w-2/3 border border-[#384457] shadow-xl">
+    <div x-data wire:ignore.self x-show="$wire.showModal" class="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center p-4">
+        <div class="bg-[#2B3346] rounded p-4 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-[#384457] shadow-xl">
             <h3 class="font-semibold mb-2 text-[#F1F5F9]">Nuevo movimiento</h3>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm text-[#A0AEC0]">Producto</label>
                     <select wire:model="form.producto_id" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]">
@@ -96,7 +96,7 @@
                     <label class="block text-sm text-[#A0AEC0]">Referencia</label>
                     <input wire:model="form.referencia" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]" />
                 </div>
-                <div class="col-span-2">
+                <div class="sm:col-span-2">
                     <label class="block text-sm text-[#A0AEC0]">Notas</label>
                     <textarea wire:model="form.notas" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]"></textarea>
                 </div>

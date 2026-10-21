@@ -13,7 +13,7 @@
 
     <div class="p-3 border-b border-[#475569] flex flex-wrap items-center justify-between gap-3 bg-[#334155] rounded-t-xl">
         <div class="flex items-center gap-2 flex-wrap">
-            <div class="relative">
+            <div class="relative w-full sm:w-auto">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AEC0]">🔍</span>
                 <input wire:model.live.debounce.300ms="search" type="text" placeholder="Buscar por nombre, email o cédula..." class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm w-72 pl-10 text-[#F1F5F9] placeholder-[#A0AEC0] focus:border-[#1D4ED8] focus:outline-none" />
             </div>

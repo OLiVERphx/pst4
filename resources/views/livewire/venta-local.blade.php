@@ -28,7 +28,7 @@
     </div>
 
     <h4 class="text-xs text-[#A0AEC0] font-semibold uppercase tracking-wide mb-2">Items</h4>
-    <div class="bg-[#334155] border border-[#475569] rounded-xl overflow-hidden mb-5">
+    <div class="bg-[#334155] border border-[#475569] rounded-xl overflow-x-auto mb-5">
         <table class="min-w-full">
             <thead class="bg-[#475569]">
                 <tr>

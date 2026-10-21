@@ -1,8 +1,8 @@
 <div>
-    <div class="p-3 border-b border-[#475569] flex items-center gap-2">
-        <div class="relative">
+    <div class="p-3 border-b border-[#475569] flex flex-wrap items-center gap-2">
+        <div class="relative w-full sm:w-auto">
             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AEC0]">🔍</span>
-            <input wire:model.live="search" type="text" placeholder="Buscar clientes" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm w-56 pl-10 text-[#F1F5F9] placeholder-[#A0AEC0] focus:border-[#1D4ED8]" />
+            <input wire:model.live="search" type="text" placeholder="Buscar clientes" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm w-full sm:w-56 pl-10 text-[#F1F5F9] placeholder-[#A0AEC0] focus:border-[#1D4ED8]" />
         </div>
 
         <select wire:model="statusFilter" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm text-[#F1F5F9]">
@@ -12,7 +12,7 @@
         </select>
     </div>
 
-    <div class="bg-[#334155] border border-[#475569] rounded-xl overflow-hidden">
+    <div class="bg-[#334155] border border-[#475569] rounded-xl overflow-x-auto">
         <table class="min-w-full">
             <thead class="bg-[#475569]"><tr>
                     <th class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-3 text-left">Cliente</th>

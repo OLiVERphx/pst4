@@ -1,9 +1,9 @@
 <div>
-    <div class="p-3 border-b border-[#475569] flex items-center gap-2">
-        <div class="flex items-center gap-2">
-            <div class="relative">
+    <div class="p-3 border-b border-[#475569] flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+            <div class="relative w-full sm:w-auto">
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AEC0]">🔍</span>
-                <input wire:model.live="search" type="text" placeholder="Buscar por nombre o código" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm w-56 pl-10 text-[#F1F5F9] placeholder-[#A0AEC0] focus:border-[#1D4ED8]" />
+                <input wire:model.live="search" type="text" placeholder="Buscar por nombre o código" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm w-full sm:w-56 pl-10 text-[#F1F5F9] placeholder-[#A0AEC0] focus:border-[#1D4ED8]" />
             </div>
 
             <select wire:model="categoryFilter" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm text-[#F1F5F9]">
@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    <div class="bg-[#334155] border border-[#475569] rounded-xl overflow-hidden">
+    <div class="bg-[#334155] border border-[#475569] rounded-xl overflow-x-auto">
         <table class="min-w-full divide-y divide-[#475569]">
             <thead class="bg-[#475569]"><tr>
                     <th class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-3 text-left">Cat</th>
@@ -78,11 +78,11 @@
 
     <!-- Modal simple -->
     <div x-data="{}" wire:ignore.self>
-        <div x-show="$wire.showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-            <div class="bg-[#2B3346] rounded shadow-xl w-2/3 p-4 border border-[#384457]">
+        <div x-show="$wire.showModal" class="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center p-4">
+            <div class="bg-[#2B3346] rounded shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 border border-[#384457]">
                 <h3 class="text-lg font-semibold mb-2 text-[#F1F5F9]">{{ $editingProduct ? 'Editar producto' : 'Nuevo producto' }}</h3>
 
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-sm text-[#A0AEC0]">Código</label>
                         <input wire:model="form.codigo" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]" />

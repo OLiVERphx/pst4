@@ -1,8 +1,8 @@
 <div>
-<div class="p-3 border-b border-[#475569] flex items-center gap-2">
-    <div class="relative">
+<div class="p-3 border-b border-[#475569] flex flex-wrap items-center gap-2">
+    <div class="relative w-full sm:w-auto">
         <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AEC0]">🔍</span>
-        <input wire:model.live="search" type="text" placeholder="Buscar pedidos" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm w-56 pl-10 text-[#F1F5F9] placeholder-[#A0AEC0] focus:border-[#1D4ED8]" />
+        <input wire:model.live="search" type="text" placeholder="Buscar pedidos" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm w-full sm:w-56 pl-10 text-[#F1F5F9] placeholder-[#A0AEC0] focus:border-[#1D4ED8]" />
     </div>
 
     <select wire:model.live="statusFilter" class="bg-[#475569] border border-[#475569] rounded-lg px-3 py-1.5 text-sm text-[#F1F5F9]">
@@ -13,7 +13,7 @@
     </select>
 </div>
 
-    <div class="bg-[#334155] border border-[#475569] rounded-xl overflow-hidden">
+    <div class="bg-[#334155] border border-[#475569] rounded-xl overflow-x-auto">
         <table class="min-w-full">
             <thead class="bg-[#475569]"><tr>
                     <th class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-3 text-left">Nro.</th>
@@ -38,14 +38,14 @@
                         elseif(in_array($st, ['enviado','en_camino','pago_confirmado','pago_confirmado_retirar','en_transito','en_transición'])) $badgeClass = 'bg-[#1D4ED8]/10 text-[#1D4ED8] px-2 py-1 rounded-full text-xs font-semibold';
                     @endphp
                     <tr class="hover:bg-[#475569]">
-                        <td class="px-4 py-2 text-sm text-[#F1F5F9]">{{ $order->numero_pedido }}</td>
+                        <td class="px-4 py-2 text-sm text-[#F1F5F9] whitespace-nowrap">{{ $order->numero_pedido }}</td>
                         <td class="px-4 py-2 text-sm text-[#F1F5F9]">{{ $order->user?->name }}</td>
                         <td class="px-4 py-2 text-sm text-[#F1F5F9]">{{ $order->tipo }}</td>
                         <td class="px-4 py-2 text-sm text-[#F1F5F9]">{{ $order->items->count() }}</td>
-                        <td class="px-4 py-2 text-sm text-[#F1F5F9]">{{ number_format($order->total, 2) }}</td>
+                        <td class="px-4 py-2 text-sm text-[#F1F5F9] whitespace-nowrap">{{ number_format($order->total, 2) }}</td>
                         <td class="px-4 py-2 text-sm text-[#F1F5F9]">{{ $order->payment?->metodo ?? '-' }}</td>
-                        <td class="px-4 py-2 text-sm"><span class="{{ $badgeClass }}">{{ \App\Helpers\LabelHelper::translateStatus($order->estado) }}</span></td>
-                        <td class="px-4 py-2 text-sm text-[#A0AEC0]">{{ $order->created_at->format('Y-m-d') }}</td>
+                        <td class="px-4 py-2 text-sm whitespace-nowrap"><span class="{{ $badgeClass }}">{{ \App\Helpers\LabelHelper::translateStatus($order->estado) }}</span></td>
+                        <td class="px-4 py-2 text-sm text-[#A0AEC0] whitespace-nowrap">{{ $order->created_at->format('Y-m-d') }}</td>
                         <td class="px-4 py-2 text-sm">
                             <button wire:click="openDetail({{ $order->id }})" class="text-[#1D4ED8]">Ver</button>
                         </td>

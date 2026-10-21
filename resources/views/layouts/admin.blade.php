@@ -33,21 +33,28 @@
     </style>
     @livewireStyles
 </head>
-<body class="min-h-screen bg-[#1E293B] text-[#F1F5F9]">
+<body class="min-h-screen bg-[#1E293B] text-[#F1F5F9]" @keydown.escape.window="sidebarOpen = false">
 
 <!-- Alpine app component -->
 <script>
+// En pantallas md+ el menú lateral está siempre visible; en el celular es un panel
+// que se abre con el botón ☰ (sidebarOpen solo aplica ahí).
 function adminApp() {
     return {
-        sidebarOpen: window.innerWidth > 768,
+        sidebarOpen: false,
         toggleSidebar() { this.sidebarOpen = !this.sidebarOpen }
     }
 }
 </script>
 
 <div class="flex">
+    <!-- Fondo oscuro detrás del menú abierto en el celular -->
+    <div x-show="sidebarOpen" x-cloak x-transition.opacity @click="sidebarOpen = false"
+         class="fixed inset-0 z-30 bg-black/60 md:hidden" aria-hidden="true"></div>
+
     <!-- Sidebar -->
-    <aside x-show="sidebarOpen" x-cloak class="fixed top-0 left-0 h-screen w-60 bg-[#334155] border-r border-[#475569] flex flex-col z-40">
+    <aside id="menu-panel" :class="sidebarOpen && '!translate-x-0'"
+           class="fixed top-0 left-0 h-screen w-60 max-w-[85vw] bg-[#334155] border-r border-[#475569] flex flex-col z-40 -translate-x-full md:translate-x-0 transition-transform duration-200">
         <div class="flex-shrink-0 p-4 border-b border-[#475569]">
             <div class="flex items-center">
                 <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-[#1D4ED8] to-[#0D9488] flex items-center justify-center text-white font-bold">SW</div>
@@ -58,7 +65,7 @@ function adminApp() {
             </div>
         </div>
 
-        <nav class="flex-1 overflow-y-auto py-2">
+        <nav class="flex-1 overflow-y-auto py-2" @click="if ($event.target.closest('a')) sidebarOpen = false">
             <div class="text-[11px] font-bold text-[#A0AEC0] uppercase tracking-wider px-4 py-2">PRINCIPAL</div>
             <ul class="mb-2">
                 <li>
@@ -181,12 +188,14 @@ function adminApp() {
     </aside>
 
     <!-- Main content wrapper -->
-    <div :class="sidebarOpen ? 'ml-60' : 'ml-0'" class="flex-1 min-h-screen transition-all duration-200">
+    <div class="flex-1 min-w-0 min-h-screen md:ml-60">
         <!-- Topbar -->
-        <header class="sticky top-0 ml-60 h-14 bg-[#334155] border-b border-[#475569] flex items-center px-6 gap-4 z-20">
-            <h2 class="text-lg font-semibold text-[#F1F5F9]">@yield('pageTitle', 'Panel')</h2>
+        <header class="sticky top-0 h-14 bg-[#334155] border-b border-[#475569] flex items-center px-3 md:px-6 gap-2 md:gap-4 z-20">
+            <button type="button" @click="toggleSidebar()" :aria-expanded="sidebarOpen" aria-controls="menu-panel" title="Menú"
+                    class="md:hidden w-9 h-9 shrink-0 rounded-lg bg-[#475569] hover:bg-[#1E293B] flex items-center justify-center text-lg">☰</button>
+            <h2 class="min-w-0 truncate text-base md:text-lg font-semibold text-[#F1F5F9]">@yield('pageTitle', 'Panel')</h2>
 
-            <div class="flex-1 flex items-center justify-center">
+            <div class="hidden sm:flex flex-1 items-center justify-center">
                 <form method="GET" action="{{ route('admin.buscar') }}" role="search" class="relative w-full max-w-xs">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[#A0AEC0]">🔍</span>
                     <input type="search" name="q" value="{{ request()->routeIs('admin.buscar') ? request('q') : '' }}" minlength="2" maxlength="100"
@@ -195,7 +204,8 @@ function adminApp() {
                 </form>
             </div>
 
-            <div class="ml-auto flex items-center gap-3">
+            <div class="ml-auto flex shrink-0 items-center gap-2 md:gap-3">
+                <a href="{{ route('admin.buscar') }}" title="Buscar" class="sm:hidden w-8 h-8 bg-[#475569] border border-[#475569] rounded-lg flex items-center justify-center">🔍</a>
                 @php $totalAlertas = array_sum(array_column($alertasCampana ?? [], 'cantidad')); @endphp
                 <div class="relative" x-data="{ abierto: false }" @keydown.escape.window="abierto = false" @click.outside="abierto = false">
                     <button type="button" @click="abierto = !abierto" :aria-expanded="abierto" title="Notificaciones"
@@ -206,7 +216,7 @@ function adminApp() {
                         @endif
                     </button>
                     <div x-show="abierto" x-cloak x-transition
-                         class="absolute right-0 mt-2 w-72 rounded-xl border border-[#475569] bg-[#1E293B] p-2 shadow-xl">
+                         class="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border border-[#475569] bg-[#1E293B] p-2 shadow-xl">
                         @forelse ($alertasCampana ?? [] as $alerta)
                             <a href="{{ $alerta['url'] }}" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[#F1F5F9] hover:bg-[#334155]">
                                 <span>{{ $alerta['icono'] }}</span>
@@ -225,7 +235,7 @@ function adminApp() {
             </div>
         </header>
 
-        <main class="p-6 min-h-[calc(100vh-56px)]">
+        <main class="p-4 md:p-6 min-h-[calc(100vh-56px)]">
             @if (session('warning'))
                 <div class="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200" role="alert">{{ session('warning') }}</div>
             @endif

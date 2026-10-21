@@ -18,10 +18,10 @@
     </div>
 
     <!-- Modal reponer -->
-    <div x-data wire:ignore.self x-show="$wire.showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-        <div class="bg-[#2B3346] rounded p-4 w-2/3 border border-[#384457] shadow-xl">
+    <div x-data wire:ignore.self x-show="$wire.showModal" class="fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center p-4">
+        <div class="bg-[#2B3346] rounded p-4 w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-[#384457] shadow-xl">
             <h3 class="font-semibold mb-2 text-[#F1F5F9]">Reponer stock</h3>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-sm text-[#A0AEC0]">Cantidad</label>
                     <input wire:model="cantidad" type="number" min="1" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]" />
@@ -30,7 +30,7 @@
                     <label class="block text-sm text-[#A0AEC0]">Referencia</label>
                     <input wire:model="referencia" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]" />
                 </div>
-                <div class="col-span-2">
+                <div class="sm:col-span-2">
                     <label class="block text-sm text-[#A0AEC0]">Notas</label>
                     <textarea wire:model="notas" class="border rounded px-2 py-1 w-full bg-[#475569] border-[#384457] text-[#F1F5F9]"></textarea>
                 </div>
