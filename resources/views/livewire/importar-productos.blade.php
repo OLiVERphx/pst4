@@ -195,7 +195,7 @@
             @endif
             @if($r['crear'] + $r['actualizar'] > 0)
                 <button wire:click="importar"
-                        wire:confirm="Se crearán {{ $r['crear'] }} y se actualizarán {{ $r['actualizar'] }} productos.{{ $r['error'] ? ' Las ' . $r['error'] . ' filas con error no se importan.' : '' }} ¿Continuar?"
+                        wire:confirm="Productos nuevos: {{ $r['crear'] }}. Productos actualizados: {{ $r['actualizar'] }}.{{ $r['error'] ? ' Filas con error que no se importan: ' . $r['error'] . '.' : '' }} ¿Continuar?"
                         class="{{ $botonPrincipal }}" wire:loading.attr="disabled" wire:target="importar">
                     <span wire:loading.remove wire:target="importar">Importar {{ $r['crear'] + $r['actualizar'] }} productos</span>
                     <span wire:loading wire:target="importar">Importando...</span>
