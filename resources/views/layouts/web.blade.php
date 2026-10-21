@@ -345,6 +345,7 @@ input, select, textarea { font-family: inherit; }
   padding: 1.5rem 1.5rem 0; max-width: 1280px; margin: 0 auto;
   display: none;
 }
+.cat-strip.active { display: block; }
 .cat-strip-inner {
   display: flex; gap: .6rem; overflow-x: auto; padding-bottom: .5rem;
   scrollbar-width: none;
@@ -361,6 +362,7 @@ input, select, textarea { font-family: inherit; }
   display: none; align-items: center; justify-content: center;
   padding: 1rem;
 }
+.modal-overlay.active { display: flex; }
 .modal {
   background: var(--c-surface); border: 1px solid var(--c-border);
   border-radius: 20px; max-width: 680px; width: 100%;
@@ -483,6 +485,10 @@ input, select, textarea { font-family: inherit; }
   border-radius: 14px; padding: 1.5rem; margin-bottom: 1.2rem;
   box-shadow: 0 1px 3px var(--c-shadow), 0 1px 2px var(--c-shadow);
 }
+/* Opción elegida: detal/mayor, tipo de entrega, método de pago y categoría */
+.type-btn.active { border-color: var(--c-blue); background: rgba(29,78,216,.15); color: var(--c-text); }
+.payment-method.selected { border-color: var(--c-blue); background: rgba(29,78,216,.12); }
+.cat-pill.active { background: var(--c-blue); border-color: var(--c-blue); color: #fff; }
 .payment-methods {
   display: flex; flex-direction: column; gap: .6rem; margin-bottom: 1.2rem;
 }

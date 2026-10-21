@@ -14,9 +14,9 @@
   <!-- CATEGORY STRIP -->
   <div class="cat-strip active">
     <div class="cat-strip-inner">
-      <button class="cat-pill" type="button" @click="filterCat('all')">Todos</button>
+      <button class="cat-pill" type="button" :class="{ active: filtroActual === 'all' }" @click="filterCat('all')">Todos</button>
       @foreach($categorias as $cat)
-        <button class="cat-pill" type="button" @click="filterCat('{{ $cat->nombre }}')">{!! ($emojis[$cat->nombre] ?? '') !!} {{ $cat->nombre }}</button>
+        <button class="cat-pill" type="button" :class="{ active: filtroActual === @js($cat->nombre) }" @click="filterCat('{{ $cat->nombre }}')">{!! ($emojis[$cat->nombre] ?? '') !!} {{ $cat->nombre }}</button>
       @endforeach
     </div>
   </div>
