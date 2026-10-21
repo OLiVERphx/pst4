@@ -41,6 +41,14 @@ Route::middleware(['auth', 'active', 'admin', 'dos_factores'])
             ->name('productos.lista')
             ->middleware('can:productos.ver');
 
+        Route::get('products/importar', [\App\Http\Controllers\Admin\ProductController::class, 'importar'])
+            ->name('productos.importar')
+            ->middleware('can:productos.editar');
+
+        Route::get('products/importar/plantilla', [\App\Http\Controllers\Admin\ProductController::class, 'plantillaImportacion'])
+            ->name('productos.importar.plantilla')
+            ->middleware('can:productos.editar');
+
         Route::get('inventory', [\App\Http\Controllers\Admin\InventoryController::class, 'index'])
             ->name('inventario.lista')
             ->middleware('can:inventario.ver');

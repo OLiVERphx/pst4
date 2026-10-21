@@ -21,7 +21,10 @@
             </select>
         </div>
 
-        <div class="ml-auto">
+        <div class="ml-auto flex flex-wrap gap-2">
+            @can('productos.editar')
+                <a href="{{ route('admin.productos.importar') }}" class="border border-[#475569] hover:bg-[#475569] text-[#F1F5F9] px-3 py-2 rounded-lg text-sm">Importar Excel</a>
+            @endcan
             <button wire:click="openCreate" class="bg-gradient-to-r from-[#1D4ED8] to-[#0D9488] text-white px-3 py-2 rounded-lg">Nuevo producto</button>
         </div>
     </div>
