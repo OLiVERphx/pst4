@@ -33,5 +33,6 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="OCR_HABILITADO" value="false"/>
+        <env name="TWO_FACTOR_OBLIGATORIO" value="false"/>
     </php>
 </phpunit>

@@ -226,6 +226,9 @@ function adminApp() {
         </header>
 
         <main class="p-6 min-h-[calc(100vh-56px)]">
+            @if (session('warning'))
+                <div class="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200" role="alert">{{ session('warning') }}</div>
+            @endif
             @yield('content')
         </main>
     </div>

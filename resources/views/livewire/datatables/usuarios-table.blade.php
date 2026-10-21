@@ -104,6 +104,11 @@
                                     <button wire:click="openEdit({{ $user->id }})" class="bg-[#475569] hover:bg-[#64748B] text-[#F1F5F9] text-xs font-semibold px-3 py-1.5 rounded-lg transition" title="Editar usuario">
                                         ✏️ Editar
                                     </button>
+                                    @if(auth()->id() !== $user->id && $user->two_factor_confirmed_at)
+                                        <button wire:click="restablecerDosFactores({{ $user->id }})" wire:confirm="¿Quitar la verificación en dos pasos de {{ $user->email }}? Úsalo solo si perdió el teléfono y los códigos de recuperación." class="text-amber-300 hover:bg-amber-500/10 border border-amber-500/30 text-xs font-semibold px-3 py-1.5 rounded-lg transition" title="Perdió el teléfono: deberá configurarla de nuevo">
+                                            🔑 Restablecer 2FA
+                                        </button>
+                                    @endif
                                     @if(auth()->id() !== $user->id)
                                         <button wire:click="toggleActivo({{ $user->id }})" class="{{ $user->activo ? 'text-red-400 hover:bg-red-500/10 border-red-500/30' : 'text-[#10B981] hover:bg-[#059669]/10 border-[#059669]/30' }} border text-xs font-semibold px-3 py-1.5 rounded-lg transition" title="{{ $user->activo ? 'Desactivar acceso' : 'Activar acceso' }}">
                                             {{ $user->activo ? 'Desactivar' : 'Activar' }}

@@ -114,4 +114,12 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    | Verificación en dos pasos del panel. Con "obligatorio", superadmin y admin
+    | deben activarla antes de usar el panel; los vendedores pueden activarla.
+    */
+    'dos_factores' => [
+        'obligatorio' => (bool) env('TWO_FACTOR_OBLIGATORIO', true),
+    ],
+
 ];

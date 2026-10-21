@@ -44,6 +44,9 @@ class User extends Authenticatable
         'remember_token',
         'cedula_hash',
         'telefono_hash',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_ultimo_paso',
     ];
 
     // Casts para tipos nativos
@@ -59,6 +62,10 @@ class User extends Authenticatable
         'cedula' => 'encrypted',
         'telefono' => 'encrypted',
         'direccion' => 'encrypted',
+        // Verificación en dos pasos (ver App\Services\ServicioDosFactores)
+        'two_factor_secret' => 'encrypted',
+        'two_factor_recovery_codes' => 'encrypted:array',
+        'two_factor_confirmed_at' => 'datetime',
     ];
 
     // Al asignar cédula o teléfono se cifran y se calcula su índice ciego en el mismo
@@ -143,6 +150,19 @@ class User extends Authenticatable
     }
 
     /** Cierra las sesiones abiertas en otros equipos (tras cambiar la contraseña). */
+    /** Roles que no pueden usar el panel sin verificación en dos pasos. */
+    public const ROLES_CON_DOS_FACTORES = ['superadmin', 'admin'];
+
+    public function tieneDosFactores(): bool
+    {
+        return $this->two_factor_confirmed_at !== null && filled($this->two_factor_secret);
+    }
+
+    public function requiereDosFactores(): bool
+    {
+        return config('auth.dos_factores.obligatorio') && $this->hasAnyRole(self::ROLES_CON_DOS_FACTORES);
+    }
+
     public function cerrarOtrasSesiones(string $sesionActual): void
     {
         if (config('session.driver') === 'database') {

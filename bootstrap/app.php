@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\MiddlewareAdmin::class,
             'active' => \App\Http\Middleware\MiddlewareUsuarioActivo::class,
+            'dos_factores' => \App\Http\Middleware\MiddlewareDosFactores::class,
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {

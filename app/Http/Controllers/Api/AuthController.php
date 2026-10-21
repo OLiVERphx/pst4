@@ -26,6 +26,14 @@ class AuthController extends Controller
     public function login(LoginRequest $request)
     {
         $result = $this->authService->login($request->validated());
+
+        // El token no pasa por la verificación en dos pasos: no se emite para esas cuentas
+        if ($result['user']->tieneDosFactores() || $result['user']->requiereDosFactores()) {
+            \Illuminate\Support\Facades\Auth::logout();
+
+            return response()->json(['message' => 'Esta cuenta usa verificación en dos pasos: entra desde el panel.'], 403);
+        }
+
         // Generar token solo para el endpoint API
         $token = $result['user']->createToken('api-token')->plainTextToken;
         return response()->json(['user' => $result['user'], 'token' => $token]);

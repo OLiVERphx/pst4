@@ -19,6 +19,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Verificación en dos pasos: cada inicio o cierre de sesión (panel, tienda o
+        // "recordarme") la vuelve a pedir; las acciones de Livewire también la exigen.
+        \Illuminate\Support\Facades\Event::listen(
+            [\Illuminate\Auth\Events\Login::class, \Illuminate\Auth\Events\Logout::class],
+            fn () => app()->bound('session.store') ? session()->forget(\App\Http\Middleware\MiddlewareDosFactores::SESION) : null
+        );
+        \Livewire\Livewire::addPersistentMiddleware([\App\Http\Middleware\MiddlewareDosFactores::class]);
+
         \Illuminate\Support\Facades\View::composer('layouts.admin', function ($view) {
             if (auth()->check()) {
                 $stats = app(\App\Services\ServicioDashboard::class)->obtenerEstadisticas();

@@ -254,4 +254,28 @@ class UsuariosTable extends Component
 
         $this->dispatch('usuario-saved');
     }
+
+    /**
+     * Quita la verificación en dos pasos de otro usuario (perdió el teléfono y los códigos).
+     * Si su rol la exige, deberá configurarla de nuevo al entrar. La propia se gestiona en Mi cuenta.
+     */
+    public function restablecerDosFactores($userId)
+    {
+        Gate::authorize('usuarios.gestionar');
+
+        $actor = Auth::user();
+        if ($actor->id == $userId) {
+            $this->addError('general', 'Tu propia verificación se gestiona en Mi cuenta.');
+            return;
+        }
+
+        $user = User::findOrFail($userId);
+        app(\App\Services\ServicioDosFactores::class)->desactivar($user);
+        $user->cerrarOtrasSesiones('');
+
+        ServicioAuditoria::registrar('2fa.restablecido', $user, null, ['por' => $actor->email], $actor->id);
+
+        session()->flash('success', "Verificación en dos pasos de {$user->email} restablecida.");
+        $this->dispatch('usuario-saved');
+    }
 }

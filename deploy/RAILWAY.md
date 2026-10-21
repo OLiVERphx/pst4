@@ -90,6 +90,15 @@ El primer arranque tarda unos minutos (migraciones). En los siguientes, el coman
 
 Solo aleja a los robots que prueban `/admin`: **no reemplaza** a una contraseña fuerte, al límite de intentos ni al captcha. Guárdala junto a la contraseña del administrador.
 
+### Verificación en dos pasos (2FA)
+
+Superadmin y admin **deben** activarla: al entrar al panel por primera vez se les muestra un QR para escanear con Google Authenticator, Microsoft Authenticator o Authy, y luego 8 códigos de recuperación (se muestran **una sola vez**: guárdalos impresos o en un gestor de contraseñas). Los vendedores pueden activarla desde *Mi cuenta*.
+
+- **Cambiar de teléfono:** *Mi cuenta → Verificación en dos pasos → Configurar otro teléfono*.
+- **Un usuario perdió el teléfono y los códigos:** el superadmin entra a *Usuarios* y pulsa *Restablecer 2FA*.
+- **El único superadmin perdió ambos:** en una terminal del servicio `web` (`railway ssh`): `php artisan usuarios:restablecer-2fa correo@ejemplo.com`.
+- `TWO_FACTOR_OBLIGATORIO=false` la vuelve opcional para todos (no recomendado en el servidor).
+
 ### Captcha (opcional, recomendado)
 
 Registro, inicio de sesión (tienda y panel) y checkout usan Cloudflare Turnstile. Sin las dos variables queda apagado.

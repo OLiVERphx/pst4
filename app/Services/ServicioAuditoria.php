@@ -87,6 +87,7 @@ class ServicioAuditoria
      */
     private const CAMPOS_PROTEGIDOS = [
         'password', 'remember_token', 'cedula', 'telefono', 'direccion', 'cedula_hash', 'telefono_hash',
+        'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_ultimo_paso',
         'entrega_telefono', 'entrega_direccion', 'cedula_pagador', 'metadata_comprobante',
     ];
 

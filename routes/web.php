@@ -14,10 +14,24 @@ Route::post("/{$rutaPanel}/login", [AdminAuthController::class, 'login'])->middl
 Route::post("/{$rutaPanel}/logout", [AdminAuthController::class, 'logout'])->middleware('auth')->name('admin.logout');
 
 // Admin protected routes
-Route::middleware(['auth', 'active', 'admin'])
+Route::middleware(['auth', 'active', 'admin', 'dos_factores'])
     ->prefix($rutaPanel)
     ->name('admin.')
     ->group(function () {
+        // Verificación en dos pasos (MiddlewareDosFactores decide cuáles se pueden ver antes del código)
+        Route::controller(\App\Http\Controllers\Admin\DosFactoresController::class)
+            ->prefix('verificacion')
+            ->name('2fa.')
+            ->group(function () {
+                Route::get('codigo', 'desafio')->name('desafio');
+                Route::post('codigo', 'verificar')->name('verificar')->middleware('throttle:5,1');
+                Route::get('activar', 'configurar')->name('configurar');
+                Route::post('activar', 'activar')->name('activar')->middleware('throttle:5,1');
+                Route::get('codigos-recuperacion', 'codigos')->name('codigos');
+                Route::post('codigos-recuperacion', 'regenerar')->name('regenerar')->middleware('throttle:5,1');
+                Route::delete('/', 'desactivar')->name('desactivar')->middleware('throttle:5,1');
+            });
+
         // El dashboard en sí puede ser visto si pasó el middleware admin, pero lo aseguramos con pedidos.ver como base general
         Route::get('dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])
             ->name('dashboard')

@@ -30,8 +30,9 @@ class AuthController extends Controller
         try {
             $result = $this->authService->login($creds);
 
-            // Login en sesión web
+            // Login en sesión web (nuevo id de sesión: evita fijación de sesión)
             Auth::login($result['user']);
+            $request->session()->regenerate();
 
             // Auditoría de inicio de sesión exitoso
             ServicioAuditoria::registrar(
@@ -42,7 +43,8 @@ class AuthController extends Controller
                 $result['user']->id
             );
 
-            return redirect()->route('admin.dashboard');
+            // Con verificación en dos pasos, MiddlewareDosFactores pide el código antes del panel
+            return redirect()->route($result['user']->tieneDosFactores() ? 'admin.2fa.desafio' : 'admin.dashboard');
         } catch (\Throwable $e) {
             // Auditoría de intento de inicio de sesión fallido
             ServicioAuditoria::registrar(
@@ -69,6 +71,9 @@ class AuthController extends Controller
             );
             $this->authService->logout($user);
         }
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
         return redirect()->route('admin.login');
     }
 }
