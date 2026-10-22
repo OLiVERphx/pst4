@@ -53,6 +53,8 @@
             <button type="submit" class="boton">Entrar al panel</button>
         </form>
 
+        <p class="pie"><a href="{{ route('password.request') }}" style="color:inherit;text-decoration:underline">¿Olvidaste tu contraseña?</a></p>
+
         <p class="pie">Smartphone World C.A. · Valera, Estado Trujillo<br>Los intentos de acceso quedan registrados.</p>
     </main>
 </body>

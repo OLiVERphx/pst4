@@ -19,6 +19,20 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Correo de "¿Olvidaste tu contraseña?" en español
+        \Illuminate\Auth\Notifications\ResetPassword::toMailUsing(function ($usuario, string $token) {
+            $url = route('password.reset', ['token' => $token, 'email' => $usuario->getEmailForPasswordReset()]);
+
+            return (new \Illuminate\Notifications\Messages\MailMessage)
+                ->subject('Restablecer tu contraseña - ' . config('app.name'))
+                ->greeting('Hola, ' . $usuario->name)
+                ->line('Recibimos una solicitud para cambiar la contraseña de tu cuenta.')
+                ->action('Crear contraseña nueva', $url)
+                ->line('El enlace vence en 60 minutos y sirve una sola vez.')
+                ->line('Si no lo pediste, ignora este correo: tu contraseña no cambia.')
+                ->salutation('Smartphone World C.A.');
+        });
+
         // Verificación en dos pasos: cada inicio o cierre de sesión (panel, tienda o
         // "recordarme") la vuelve a pedir; las acciones de Livewire también la exigen.
         \Illuminate\Support\Facades\Event::listen(

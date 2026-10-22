@@ -136,7 +136,7 @@ PORT=8001
 ## Cosas que debes saber
 
 - **Los respaldos programados se guardan en el mismo volumen que los datos.** Protegen de un error, no de perder el servicio. Descarga uno desde el panel con regularidad, o configura un disco S3 externo (`BACKUP_DISK_DRIVER=s3`; requiere `composer require league/flysystem-aws-s3-v3`).
-- **Correo:** sin SMTP (`MAIL_MAILER` por defecto es `log`), el reporte semanal se escribe en el registro y no llega a ningún buzón. Para que llegue, configura `MAIL_MAILER=smtp` y las variables `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`.
+- **Correo (necesario para «¿Olvidaste tu contraseña?»):** sin SMTP (`MAIL_MAILER` por defecto es `log`), ni el enlace para recuperar la contraseña ni el reporte semanal llegan a ningún buzón: solo se escriben en el registro. Para que llegue, configura `MAIL_MAILER=smtp` y las variables `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`.
 - **Datos de demostración:** no los cargues en un servidor con datos reales. `php artisan demo:ventas` se niega a correr en producción sin `--force` justamente por eso.
 - **Si el crédito se acaba, Railway detiene los servicios.** Los datos del volumen se conservan un tiempo limitado después (30 días en el plan de prueba).
 - **Actualizar:** cada `git push` a la rama conectada vuelve a desplegar. Las migraciones nuevas se aplican solas al arrancar.

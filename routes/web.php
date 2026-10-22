@@ -154,6 +154,12 @@ Route::middleware('guest:web')->group(function () {
     Route::get('/registro', [\App\Http\Controllers\Web\AuthController::class, 'showRegister'])
         ->name('web.register');
     Route::post('/registro', [\App\Http\Controllers\Web\AuthController::class, 'register'])->middleware('throttle:10,1');
+
+    // ¿Olvidaste tu contraseña? (clientes y personal)
+    Route::get('/recuperar-contrasena', [\App\Http\Controllers\Web\RecuperarContrasenaController::class, 'formulario'])->name('password.request');
+    Route::post('/recuperar-contrasena', [\App\Http\Controllers\Web\RecuperarContrasenaController::class, 'enviar'])->name('password.email')->middleware('throttle:5,1');
+    Route::get('/restablecer-contrasena/{token}', [\App\Http\Controllers\Web\RecuperarContrasenaController::class, 'formularioNuevo'])->name('password.reset');
+    Route::post('/restablecer-contrasena', [\App\Http\Controllers\Web\RecuperarContrasenaController::class, 'restablecer'])->name('password.update')->middleware('throttle:5,1');
 });
 
 Route::post('/logout', [\App\Http\Controllers\Web\AuthController::class, 'logout'])

@@ -13,6 +13,9 @@
     <h2 class="auth-title">Bienvenido de vuelta</h2>
     <p class="auth-sub">Inicia sesión para acceder a tu cuenta y gestionar tus pedidos.</p>
 
+    @if(session('status'))
+      <div role="status" style="background:rgba(5,150,105,.1);border:1px solid rgba(5,150,105,.4);color:#10B981;border-radius:.6rem;padding:.7rem .9rem;font-size:.88rem;margin-bottom:1rem">{{ session('status') }}</div>
+    @endif
     @if(session('error'))
       <div style="color:#EF4444;font-size:.9rem;margin-bottom:.6rem">{{ session('error') }}</div>
     @endif
@@ -33,7 +36,10 @@
       </div>
 
       <div class="form-group">
-        <label><input type="checkbox" name="recuerdar" {{ old('recuerdar') ? 'checked' : '' }}> Recordarme</label>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap">
+          <label><input type="checkbox" name="recuerdar" {{ old('recuerdar') ? 'checked' : '' }}> Recordarme</label>
+          <a href="{{ route('password.request') }}" style="font-size:.85rem">¿Olvidaste tu contraseña?</a>
+        </div>
       </div>
 
       <div class="form-group">
