@@ -157,6 +157,11 @@ Railway bloquea el SMTP (puertos 465 y 587) en los planes Trial y Hobby, así qu
    ```
 5. Despliega y, en la consola del servicio, prueba: `php artisan correo:probar tu-correo@gmail.com`.
 
+**Alternativa sin verificación por SMS (Resend, requiere dominio propio):** Brevo pide verificar un teléfono por SMS y no admite números de Venezuela. Resend no lo pide, pero exige un dominio propio:
+1. Crea la cuenta en resend.com, agrega el dominio en *Domains* y copia en el DNS del dominio los registros que indica; espera a que diga *Verified*.
+2. En *API Keys*, crea una con permiso *Sending access*.
+3. En Railway: `MAIL_MAILER=resend`, `RESEND_API_KEY=re_...` y `MAIL_FROM_ADDRESS=tienda@tu-dominio` (de ese dominio). Prueba con `php artisan correo:probar`.
+
 Si la prueba llega a spam: con un remitente Gmail es normal al principio. Se corrige al usar un dominio propio y autenticarlo en Brevo (*Domains → Add a domain*, copiando los registros DNS que indica).
 
 ## Rotar credenciales (si las variables de entorno quedaron expuestas)

@@ -15,6 +15,13 @@ class CorreoBrevoTest extends TestCase
         $this->assertInstanceOf(BrevoApiTransport::class, Mail::mailer('brevo')->getSymfonyTransport());
     }
 
+    public function test_el_mailer_resend_queda_disponible(): void
+    {
+        config(['mail.default' => 'resend', 'services.resend.key' => 're_prueba']);
+
+        $this->assertInstanceOf(\Illuminate\Mail\Transport\ResendTransport::class, Mail::mailer('resend')->getSymfonyTransport());
+    }
+
     public function test_el_comando_de_prueba_avisa_cuando_el_correo_no_sale(): void
     {
         config(['mail.default' => 'log']);
