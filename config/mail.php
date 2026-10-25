@@ -37,6 +37,11 @@ return [
 
     'mailers' => [
 
+        // Brevo por API (HTTPS): funciona en planes que bloquean el SMTP, como Railway Trial/Hobby
+        'brevo' => [
+            'transport' => 'brevo',
+        ],
+
         'smtp' => [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),

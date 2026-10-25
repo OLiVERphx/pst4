@@ -136,10 +136,28 @@ PORT=8001
 ## Cosas que debes saber
 
 - **Los respaldos programados se guardan en el mismo volumen que los datos.** Protegen de un error, no de perder el servicio. Descarga uno desde el panel con regularidad, o configura un disco S3 externo (`BACKUP_DISK_DRIVER=s3`; requiere `composer require league/flysystem-aws-s3-v3`).
-- **Correo (necesario para «¿Olvidaste tu contraseña?»):** sin SMTP (`MAIL_MAILER` por defecto es `log`), ni el enlace para recuperar la contraseña ni el reporte semanal llegan a ningún buzón: solo se escriben en el registro. Para que llegue, configura `MAIL_MAILER=smtp` y las variables `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`.
+- **Correo (necesario para «¿Olvidaste tu contraseña?»):** sin configurarlo (`MAIL_MAILER` por defecto es `log`), ni el enlace para recuperar la contraseña ni el reporte semanal llegan a ningún buzón: solo se escriben en el registro. Ver la sección **Correo** más abajo.
 - **Datos de demostración:** no los cargues en un servidor con datos reales. `php artisan demo:ventas` se niega a correr en producción sin `--force` justamente por eso.
 - **Si el crédito se acaba, Railway detiene los servicios.** Los datos del volumen se conservan un tiempo limitado después (30 días en el plan de prueba).
 - **Actualizar:** cada `git push` a la rama conectada vuelve a desplegar. Las migraciones nuevas se aplican solas al arrancar.
+
+## Correo (Brevo)
+
+Railway bloquea el SMTP (puertos 465 y 587) en los planes Trial y Hobby, así que el correo sale por la **API HTTPS de Brevo** (gratis hasta 300 correos por día).
+
+1. Crea una cuenta en brevo.com con el correo de la tienda.
+2. **Remitente:** en *Senders, domains & dedicated IPs → Senders → Add a sender*, agrega el correo que verán los clientes (por ejemplo, el Gmail de la tienda) y confírmalo con el enlace que te llega.
+3. **Clave:** en *SMTP & API → API Keys → Generate a new API key*. Cópiala (empieza con `xkeysib-`); solo se muestra una vez.
+4. En el servicio `web` de Railway, agrega:
+   ```
+   MAIL_MAILER=brevo
+   BREVO_API_KEY=xkeysib-...
+   MAIL_FROM_ADDRESS=el-correo-verificado-del-paso-2
+   MAIL_FROM_NAME=Smartphone World
+   ```
+5. Despliega y, en la consola del servicio, prueba: `php artisan correo:probar tu-correo@gmail.com`.
+
+Si la prueba llega a spam: con un remitente Gmail es normal al principio. Se corrige al usar un dominio propio y autenticarlo en Brevo (*Domains → Add a domain*, copiando los registros DNS que indica).
 
 ## Rotar credenciales (si las variables de entorno quedaron expuestas)
 

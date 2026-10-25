@@ -19,6 +19,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Envío de correo por la API HTTPS de Brevo (el SMTP suele estar bloqueado en Railway)
+        \Illuminate\Support\Facades\Mail::extend('brevo', fn () => (new \Symfony\Component\Mailer\Bridge\Brevo\Transport\BrevoTransportFactory())
+            ->create(new \Symfony\Component\Mailer\Transport\Dsn('brevo+api', 'default', config('services.brevo.key'))));
+
         // Correo de "¿Olvidaste tu contraseña?" en español
         \Illuminate\Auth\Notifications\ResetPassword::toMailUsing(function ($usuario, string $token) {
             $url = route('password.reset', ['token' => $token, 'email' => $usuario->getEmailForPasswordReset()]);

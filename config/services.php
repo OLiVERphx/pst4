@@ -42,6 +42,11 @@ return [
         'key' => env('ML_API_KEY'),
     ],
 
+    // Correo por la API de Brevo (MAIL_MAILER=brevo)
+    'brevo' => [
+        'key' => env('BREVO_API_KEY'),
+    ],
+
     // Captcha Cloudflare Turnstile. Sin clave secreta queda desactivado.
     'turnstile' => [
         'site_key' => env('TURNSTILE_SITE_KEY'),
