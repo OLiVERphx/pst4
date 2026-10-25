@@ -22,11 +22,16 @@ class RecuperarContrasenaController extends Controller
 
     public function formulario()
     {
+        // Sin correo configurado el enlace nunca llegaría: no se ofrece el formulario
+        abort_unless(config('mail.recuperacion_disponible'), 404);
+
         return view('web.auth.recuperar');
     }
 
     public function enviar(Request $request)
     {
+        abort_unless(config('mail.recuperacion_disponible'), 404);
+
         $request->validate([
             'email' => 'required|email',
             'cf-turnstile-response' => [new Turnstile()],

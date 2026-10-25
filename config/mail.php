@@ -16,6 +16,9 @@ return [
 
     'default' => env('MAIL_MAILER', 'log'),
 
+    // La recuperación de contraseña por correo solo se ofrece si el correo realmente sale
+    'recuperacion_disponible' => ! in_array(env('MAIL_MAILER', 'log'), ['log', 'array'], true),
+
     /*
     |--------------------------------------------------------------------------
     | Mailer Configurations

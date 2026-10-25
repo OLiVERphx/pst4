@@ -15,6 +15,21 @@ class RecuperarContrasenaTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['mail.recuperacion_disponible' => true]);
+    }
+
+    public function test_sin_correo_configurado_no_se_ofrece_la_recuperacion(): void
+    {
+        config(['mail.recuperacion_disponible' => false]);
+
+        $this->get(route('web.login'))->assertDontSee(route('password.request'), false);
+        $this->get(route('admin.login'))->assertDontSee(route('password.request'), false);
+        $this->get(route('password.request'))->assertNotFound();
+    }
+
     public function test_los_inicios_de_sesion_ofrecen_recuperar_la_contrasena(): void
     {
         $this->get(route('web.login'))->assertSee(route('password.request'), false);

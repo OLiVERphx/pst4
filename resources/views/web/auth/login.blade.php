@@ -38,7 +38,9 @@
       <div class="form-group">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap">
           <label><input type="checkbox" name="recuerdar" {{ old('recuerdar') ? 'checked' : '' }}> Recordarme</label>
-          <a href="{{ route('password.request') }}" style="font-size:.85rem">¿Olvidaste tu contraseña?</a>
+          @if(config('mail.recuperacion_disponible'))
+            <a href="{{ route('password.request') }}" style="font-size:.85rem">¿Olvidaste tu contraseña?</a>
+          @endif
         </div>
       </div>
 
