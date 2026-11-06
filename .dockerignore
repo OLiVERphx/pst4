@@ -16,7 +16,6 @@ storage/framework/views/*
 storage/app
 tests
 ml-service
-"sistema modelo"
 prototipos
 scripts
 *.md
